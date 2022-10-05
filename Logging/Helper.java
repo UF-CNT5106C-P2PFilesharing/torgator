@@ -34,7 +34,7 @@ public class Helper {
      * This method is used to log a message in a log file and show it in console
      * @param message - message to be logged and showed in console
      */
-    public static void logAndDisplayInConsole(String message) {
+    public static void logMessage(String message) {
         log.info(message);
         System.out.println(LogFormatter.getFormattedMessage(message));
     }
