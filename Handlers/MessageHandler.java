@@ -5,6 +5,8 @@ import Messages.Constants;
 import Messages.HandShakeMsg;
 import Messages.MessageMetadata;
 import Messages.Msg;
+import Queue.MessageQueue;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -52,16 +54,17 @@ public class MessageHandler implements Runnable {
                     Helper.logMessage(id + " established a connection to " + remotePeerId);
                     Helper.logMessage(id + " Received a HANDSHAKE message from " + remotePeerId);
                     //populate peerID to socket mapping
-                    peerProcess.peerToSocketMap.put(remotePeerId, this.peerSocket);
+//                    peerProcess.peerToSocketMap.put(remotePeerId, this.peerSocket);
                     break;
                 }
             }
         }
         // Sending BitField...
-        Msg m = new Msg(Constants.BITFIELD, peerProcess.bitFieldMessage.getBytes());
-        byte[] b = Msg.serializeMessage(m);
-        outputStream.write(b);
-        peerProcess.remotePeerDetailsMap.get(remotePeerId).setPeerState(8);
+//        Msg m = new Msg(Constants.BITFIELD, peerProcess.bitFieldMessage.getBytes());
+//        byte[] b = Msg.serializeMessage(m);
+//        outputStream.write(b);
+//        set remote peer state
+//        peerProcess.remotePeerDetailsMap.get(remotePeerId).setPeerState(8);
     }
 
     public void processPassiveConnection() throws Exception {
@@ -75,7 +78,7 @@ public class MessageHandler implements Runnable {
                     Helper.logMessage(id + " Received a HANDSHAKE message from Peer " + remotePeerId);
 
                     //populate peerID to socket mapping
-                    peerProcess.peerToSocketMap.put(remotePeerId, this.peerSocket);
+//                    peerProcess.peerToSocketMap.put(remotePeerId, this.peerSocket);
                     break;
                 } else {
                     continue;
@@ -89,7 +92,8 @@ public class MessageHandler implements Runnable {
             Helper.logMessage(id + " HANDSHAKE message sending failed.");
             System.exit(-1);
         }
-        peerProcess.remotePeerDetailsMap.get(remotePeerId).setPeerState(2);
+//         set remote peer state
+//        peerProcess.remotePeerDetailsMap.get(remotePeerId).setPeerState(2);
     }
 
     public void processMessages() throws IOException {
@@ -120,9 +124,9 @@ public class MessageHandler implements Runnable {
                 case Constants.MESSAGE_DOWNLOADED:
                     metadata.setMsg(message);
                     metadata.setSenderId(remotePeerId);
-                    int peerState = peerProcess.remotePeerDetailsMap.get(remotePeerId).getPeerState();
-                    peerProcess.remotePeerDetailsMap.get(remotePeerId).setPreviousPeerState(peerState);
-                    peerProcess.remotePeerDetailsMap.get(remotePeerId).setPeerState(15);
+//                    int peerState = peerProcess.remotePeerDetailsMap.get(remotePeerId).getPeerState();
+//                    peerProcess.remotePeerDetailsMap.get(remotePeerId).setPreviousPeerState(peerState);
+//                    peerProcess.remotePeerDetailsMap.get(remotePeerId).setPeerState(15);
                     MessageQueue.addMessageToMessageQueue(metadata);
                     break;
                 default:
