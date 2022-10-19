@@ -8,7 +8,7 @@ import static Logging.Helper.logMessage;
 public class Msg {
     private String lengthInString;
     private String type;
-    private int message_type_length = Constants.MESSAGE_TYPE;
+    private int dataLength;
     private byte[] payload = null;
     private byte[] typeInBytes = null;
     private byte[] lengthInBytes = null;
@@ -18,7 +18,7 @@ public class Msg {
     public Msg(String messageType) {
         try {
             if (messageType.equals(Constants.INTERESTED) || messageType.equals(Constants.NOT_INTERESTED) || messageType.equals(Constants.CHOKE) || messageType.equals(Constants.UNCHOKE) || messageType.equals(Constants.MESSAGE_DOWNLOADED)) {
-                this.message_type_length = Constants.MESSAGE_TYPE;
+                this.dataLength = Constants.MESSAGE_TYPE;
                 this.typeInBytes = messageType.trim().getBytes(Constants.DEFAULT_CHARSET);
                 this.payload = null;
             } else {
@@ -31,12 +31,12 @@ public class Msg {
 
     public Msg(String messageType, byte[] payload) throws UnsupportedEncodingException {
         if (payload != null) {
-            this.message_type_length = payload.length + 1;
+            this.dataLength = payload.length + 1;
             this.payload = payload;
         }
         else {
             if (messageType.equals(Constants.INTERESTED) || messageType.equals(Constants.NOT_INTERESTED) || messageType.equals(Constants.CHOKE) || messageType.equals(Constants.UNCHOKE) || messageType.equals(Constants.MESSAGE_DOWNLOADED)) {
-                this.message_type_length = Constants.MESSAGE_TYPE;
+                this.dataLength = Constants.MESSAGE_TYPE;
                 this.payload = null;
             }
         }
@@ -61,14 +61,14 @@ public class Msg {
     }
 
     public void setMessageLength(int length) throws UnsupportedEncodingException {
-        this.message_type_length = length;
+        this.dataLength = length;
         this.lengthInString = ((Integer) length).toString();
         this.lengthInBytes = this.lengthInString.getBytes(Constants.DEFAULT_CHARSET);
     }
 
     public void setMessageLength(byte[] length) throws UnsupportedEncodingException {
         int len = ByteBuffer.wrap(length).getInt();
-        this.message_type_length = len;
+        this.dataLength = len;
         this.lengthInString = Integer.toString(len);
         this.lengthInBytes = length;
     }
@@ -120,6 +120,14 @@ public class Msg {
         }
         return msg;
 
+    }
+
+    public int getDataLength() {
+        return dataLength;
+    }
+
+    public void setDataLength(int dataLength) {
+        this.dataLength = dataLength;
     }
 }
 

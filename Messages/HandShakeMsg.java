@@ -37,7 +37,7 @@ public class HandShakeMsg {
         return handShakeMessageInBytes;
     }
 
-    public HandShakeMsg deserializeHandShakeMsg(byte[] handShakeMessageInBytes) throws ArrayStoreException, UnsupportedEncodingException {
+    public static HandShakeMsg deserializeHandShakeMsg(byte[] handShakeMessageInBytes) throws ArrayStoreException, UnsupportedEncodingException {
         HandShakeMsg message = null;
         byte[] header = new byte[Constants.HANDSHAKE_HEADER_LENGTH];
         byte[] peerId = new byte[Constants.HANDSHAKE_PEERID_LENGTH];
@@ -48,5 +48,17 @@ public class HandShakeMsg {
         message.setHeaderFromBytes(header);
         message.setPeerIdFromBytes(peerId);
         return message;
+    }
+
+    public String getHeader() {
+        return header;
+    }
+
+    public String getPeerID() {
+        return peerID;
+    }
+
+    public void setPeerID(String peerID) {
+        this.peerID = peerID;
     }
 }
