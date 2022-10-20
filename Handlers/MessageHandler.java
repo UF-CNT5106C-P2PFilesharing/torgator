@@ -3,7 +3,7 @@ package Handlers;
 import Logging.Helper;
 import Messages.Constants;
 import Messages.HandShakeMsg;
-import Messages.MessageMetadata;
+import Metadata.MessageMetadata;
 import Messages.Msg;
 import Queue.MessageQueue;
 
