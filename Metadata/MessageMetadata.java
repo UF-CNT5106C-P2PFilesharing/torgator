@@ -1,4 +1,6 @@
-package Messages;
+package Metadata;
+
+import Messages.Msg;
 
 public class MessageMetadata {
     private Msg msg;

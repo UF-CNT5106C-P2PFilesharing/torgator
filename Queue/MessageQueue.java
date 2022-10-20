@@ -1,6 +1,6 @@
 package Queue;
 
-import Messages.MessageMetadata;
+import Metadata.MessageMetadata;
 import java.util.LinkedList;
 import java.util.Queue;
 
