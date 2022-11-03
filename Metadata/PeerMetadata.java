@@ -81,4 +81,24 @@ public class PeerMetadata {
     public void setIsChoked(int isChoked) {
         this.isChoked = isChoked;
     }
+
+    public String getId() {
+        return id;
+    }
+
+    public String getPort() {
+        return port;
+    }
+
+    public int getIndex() {
+        return index;
+    }
+
+    public int getHasFile() {
+        return hasFile;
+    }
+
+    public String getHostAddress() {
+        return hostAddress;
+    }
 }

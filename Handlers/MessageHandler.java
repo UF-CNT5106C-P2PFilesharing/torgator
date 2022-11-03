@@ -80,8 +80,6 @@ public class MessageHandler implements Runnable {
                     //populate peerID to socket mapping
 //                    peerProcess.peerToSocketMap.put(remotePeerId, this.peerSocket);
                     break;
-                } else {
-                    continue;
                 }
             }
         }
