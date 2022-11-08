@@ -7,13 +7,11 @@ import Handlers.ServerHandler;
 import Logging.Helper;
 import Messages.BitField;
 import Metadata.PeerMetadata;
-import Tasks.OptimisticallyUnchokedNeighbors;
+import Tasks.OptimisticallyUnChokedNeighbors;
 import Tasks.PreferredNeighbors;
+import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
@@ -22,38 +20,37 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Set;
 import java.util.Timer;
-import java.util.Vector;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.*;
+
 import static Logging.Helper.logMessage;
 
 public class Peer {
-    public Thread fileServerThread;
-    public ServerSocket serverSocket = null;
+    public static ExecutorService fileServerThread = Executors.newSingleThreadExecutor();
+    public static ServerSocket serverSocket = null;
     public static String peerID;
     public static int peerIndex;
     public static boolean isFirstPeer = false;
     public static int peerPort;
     public static int peerHasFile;
     public static BitField bitFieldMessage = null;
-    public static Thread messageProcessor;
+    public static ExecutorService messageProcessor = Executors.newSingleThreadExecutor();
     public static boolean isDownloadComplete = false;
-    public static Vector<Thread> peerThreads = new Vector<>();
-    public static Vector<Thread> servingThreads = new Vector<>();
+    public static ExecutorService peerThreads = Executors.newCachedThreadPool();
+    public static ExecutorService servingThreads = Executors.newCachedThreadPool();
     public static volatile Timer preferredNeighborsTimer;
     public static volatile Timer optimisticallyUnChokedNeighborTimer;
     public static volatile ConcurrentHashMap<String, PeerMetadata> remotePeerDetails = new ConcurrentHashMap<String, PeerMetadata>();
-    public static volatile ConcurrentHashMap<String, PeerMetadata> preferredNeighboursMap = new ConcurrentHashMap<String, PeerMetadata>();
+    public static volatile ConcurrentHashMap<String, PeerMetadata> preferredNeighbours = new ConcurrentHashMap<String, PeerMetadata>();
     public static volatile ConcurrentHashMap<String, Socket> peerToSocketMap = new ConcurrentHashMap<>();
     public static volatile ConcurrentHashMap<String, PeerMetadata> optimisticUnChokedNeighbors = new ConcurrentHashMap<String, PeerMetadata>();
 
     public static void main(String[] args) {
-        Peer process = new Peer();
         peerID = args[0];
 
         try {
             Helper logHelper = new Helper();
             logHelper.initializeLogger(peerID);
-            logMessage("Peer " + peerID + " started");
+            logMessage(peerID + " started");
             System.out.println("Reading configurations");
             readInConfiguration();
             // TODO
@@ -62,15 +59,15 @@ public class Peer {
             // initializing current peer bitfield information
             initializeBitFieldMessage();
             // starting the message processing thread
-            startMessageProcessingThread(process);
+            startMessageProcessingThread();
             // starting the file exchanging threads
-            startFileExchangeThreads(process);
+            startFileExchangeThreads();
             // update preferred neighbors list
             determinePreferredNeighbors();
             // update optimistically unchoked neighbor list
             determineOptimisticallyUnchockedNeighbours();
             // if all the peers have completed downloading the file i.e, all entries in PeerInfo.cfg update to 1 terminate current peer
-            terminatePeerAndCleanUp(process);
+            terminatePeerAndCleanUp();
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -80,18 +77,14 @@ public class Peer {
         }
     }
 
-    public Thread getFileServerThread() {
-        return fileServerThread;
-    }
-
     public static void readInConfiguration() throws Exception {
 
-        //read from Common.cfg
+        // read from Common.cfg
         initializeSystemConfiguration();
-        //read from Peerinfo.cfg
+        // read from PeerInfo.cfg
         addOtherPeerMetadata();
-        //initialize preferred neighbours
-//        setPreferredNeighbours();
+        // initialize preferred neighbours
+        setPreferredNeighbours();
 
     }
 
@@ -124,77 +117,67 @@ public class Peer {
 
     /**
      * This method is used to start message processing thread
-     * @param process - the peer process to start the thread into
      */
-    public static void startMessageProcessingThread(Peer process) {
-        messageProcessor = new Thread(new MessageProcessingHandler(peerID));
-        messageProcessor.start();
+    public static void startMessageProcessingThread() {
+        messageProcessor.execute(new MessageProcessingHandler(peerID));
     }
 
     /**
      * This method is used to start file server and file receiver threads
-     * @param process - The process to start threads into
      */
-    public static void startFileExchangeThreads(Peer process) throws IOException {
-        if (isFirstPeer) {
-            //Peer that has the file initially
-            startFileServingThread(process);
-        } else {
+    public static void startFileExchangeThreads() throws IOException {
+        if (!isFirstPeer) {
             //if file not present create a new one and start serving and listening.
             createNewFile();
-            startFileReceivingThreads(process);
-            startFileServingThread(process);
+            startFileReceivingThreads();
         }
+        startFileServingThread();
     }
 
     /**
      * This method is used to create empty file with size 'SystemConfiguration.fileSize' and set zero bits into it
      */
-    public static void createNewFile() {
-        try {
+    public static void createNewFile() throws IOException {
             File dir = new File(peerID);
-            dir.mkdir();
+            if(dir.mkdir()) {
+                File emptyFile = new File(peerID, SystemConfiguration.fileName);
+                try (OutputStream os = new FileOutputStream(emptyFile, true)) {
+                    byte b = 0;
 
-            File emptyFile = new File(peerID, SystemConfiguration.fileName);
-            try (OutputStream os = new FileOutputStream(emptyFile, true)) {
-                byte b = 0;
-
-                for (int i = 0; i < SystemConfiguration.fileSize; i++)
-                    os.write(b);
+                    for (int i = 0; i < SystemConfiguration.fileSize; i++)
+                        os.write(b);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
-        } catch (Exception e) {
-            logMessage(peerID + " ERROR creating file : " + e.getMessage());
-            e.printStackTrace();
-        }
+            else {
+                logMessage(peerID + " ERROR creating file");
+                throw new IOException(peerID + " ERROR creating file");
+            }
     }
 
     /**
      * This method is used to start file receiver threads
-     * @param process - The process to start threads into
      */
-    public static void startFileReceivingThreads(Peer process) throws IOException {
+    public static void startFileReceivingThreads() throws IOException {
         Set<String> remotePeerMetaDataKeys = remotePeerDetails.keySet();
         for (String remotePeerID : remotePeerMetaDataKeys) {
             PeerMetadata peerMetadata = remotePeerDetails.get(remotePeerID);
 
-            if (process.peerIndex > peerMetadata.getIndex()) {
-                Thread tempThread = new Thread(new MessageHandler(peerID, 1, peerMetadata.getHostAddress(), Integer.parseInt(peerMetadata.getPort())));
-                peerThreads.add(tempThread);
-                tempThread.start();
+            if (peerIndex > peerMetadata.getIndex()) {
+                peerThreads.execute(new MessageHandler(peerID, 1, peerMetadata.getHostAddress(), Integer.parseInt(peerMetadata.getPort())));
             }
         }
     }
 
     /**
      * This method is used to start file server thread
-     * @param process - peerprrocess to start thread into
      */
-    public static void startFileServingThread(Peer process) {
+    public static void startFileServingThread() {
         try {
             //Start a new file server thread
-            process.serverSocket = new ServerSocket(peerPort);
-            process.fileServerThread = new Thread(new ServerHandler(process.serverSocket, peerID));
-            process.fileServerThread.start();
+            serverSocket = new ServerSocket(peerPort);
+            fileServerThread.execute(new ServerHandler(serverSocket, peerID));
         } catch (SocketTimeoutException e) {
             logMessage(peerID + " Socket Timed out Error - " + e.getMessage());
             e.printStackTrace();
@@ -218,56 +201,24 @@ public class Peer {
      */
     public static void determineOptimisticallyUnchockedNeighbours() {
         optimisticallyUnChokedNeighborTimer = new Timer();
-        optimisticallyUnChokedNeighborTimer.schedule(new OptimisticallyUnchokedNeighbors(), 0, SystemConfiguration.optimisticUnChokingInterval * 100);
+        optimisticallyUnChokedNeighborTimer.schedule(new OptimisticallyUnChokedNeighbors(), 0, SystemConfiguration.optimisticUnChokingInterval * 100);
     }
 
     /**
      * This method is used to terminate the Peer process if all the peers have downloaded the files.
      * It terminates all the threads related to the Peer.
-     * @param process - The process to terminate
      */
-    private static void terminatePeerAndCleanUp(Peer process) {
+    private static void terminatePeerAndCleanUp() {
         while (true) {
             if (isDownloadComplete()) {
                 logMessage("All peers have completed downloading the file.");
                 preferredNeighborsTimer.cancel();
                 optimisticallyUnChokedNeighborTimer.cancel();
-
-                try {
-                    Thread.currentThread();
-                    Thread.sleep(5000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-
-                if (process.getFileServerThread().isAlive()) {
-                    process.getFileServerThread().stop();
-                }
-
-                if (messageProcessor.isAlive()) {
-                    messageProcessor.stop();
-                }
-
-                for (Thread thread : peerThreads) {
-                    if (thread.isAlive()) {
-                        thread.stop();
-                    }
-                }
-
-                for (Thread thread : servingThreads) {
-                    if (thread.isAlive()) {
-                        thread.stop();
-                    }
-                }
-
+                messageProcessor.shutdown();
+                peerThreads.shutdown();
+                servingThreads.shutdown();
+                fileServerThread.shutdown();
                 break;
-
-            } else {
-                try {
-                    Thread.currentThread();
-                    Thread.sleep(15000);
-                } catch (InterruptedException e) {
-                }
             }
         }
     }
@@ -330,9 +281,43 @@ public class Peer {
 
     public static void addOtherPeerMetadata() throws IOException {
         List<String> lines = Files.readAllLines(Paths.get("/Users/anmol/IdeaProjects/torgator/Configurations/PeerInfo.cfg"));
-        for (int i = 0; i < lines.size(); i++) {
-            String[] properties = lines.get(i).split("\\s+");
-            remotePeerDetails.put(properties[0], new PeerMetadata(properties[0], properties[1], properties[2], Integer.parseInt(properties[3]), i));
+        int index = 0;
+        for (String line: lines) {
+            String[] properties = line.split("\\s+");
+            remotePeerDetails.put(properties[0], new PeerMetadata(properties[0], properties[1], properties[2], Integer.parseInt(properties[3]), index));
+            index++;
+        }
+    }
+
+    public static void updateOtherPeerMetaData() {
+        try {
+            List<String> lines = Files.readAllLines(Paths.get("/Users/anmol/IdeaProjects/torgator/Configurations/PeerInfo.cfg"));
+            for (String line : lines) {
+                String[] properties = line.split("\\s+");
+                String peerId = properties[0];
+                int isCompleteFile = Integer.parseInt(properties[3]);
+                PeerMetadata remotePeer = remotePeerDetails.get(peerId);
+                if (isCompleteFile == 1) {
+                    remotePeer.setIsInterested(0);
+                    remotePeer.setHasCompleteFile(1);
+                    remotePeer.setIsChoked(0);
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * This method is used to set preferred neighbors of a peer
+     */
+    public static void setPreferredNeighbours() {
+        Set<String> remotePeerIDs = remotePeerDetails.keySet();
+        for (String otherPeerId : remotePeerIDs) {
+            PeerMetadata peerMetadata = remotePeerDetails.get(peerID);
+            if (peerMetadata != null && !peerID.equals(otherPeerId)) {
+                preferredNeighbours.put(peerID, peerMetadata);
+            }
         }
     }
 }

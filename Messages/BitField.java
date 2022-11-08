@@ -157,6 +157,21 @@ public class BitField {
         return Peer.bitFieldMessage.getFilePieces()[pieceIndex].getIsPieceAvailable() == 1;
     }
 
+    public synchronized int getInterestingPieceIndex(BitField bitFieldMessage) {
+        int numberOfPieces = bitFieldMessage.getNumberOfAvailablePieces();
+        int interestingPiece = -1;
+
+        for (int i = 0; i < numberOfPieces; i++) {
+            if (bitFieldMessage.getFilePieces()[i].getIsPieceAvailable() == 1
+                    && this.getFilePieces()[i].getIsPieceAvailable() == 0) {
+                interestingPiece = i;
+                break;
+            }
+        }
+        return interestingPiece;
+    }
+
+
     public FilePiece[] getFilePieces() {
         return filePieces;
     }
@@ -172,4 +187,6 @@ public class BitField {
     public void setNumPieces(int numPieces) {
         this.numPieces = numPieces;
     }
+
+
 }

@@ -1,19 +1,20 @@
+package Messages;
 
-public class MessageDetails {
+public class MsgDetails {
 
-    private Message message;
+    private Msg message;
     private String fromPeerID;
-    public MessageDetails() {
-        message = new Message();
+    public MsgDetails() {
+        message = new Msg();
         fromPeerID = null;
     }
 
     
-    public Message getMessage() {
+    public Msg getMessage() {
         return message;
     }
 
-    public void setMessage(Message message) {
+    public void setMessage(Msg message) {
         this.message = message;
     }
 

@@ -101,4 +101,89 @@ public class PeerMetadata {
     public String getHostAddress() {
         return hostAddress;
     }
+
+    public void setIsPreferredNeighbor(int isPreferredNeighbor) {
+        this.isPreferredNeighbor = isPreferredNeighbor;
+    }
+
+    public void setPeerState(int peerState) {
+        this.peerState = peerState;
+    }
+
+    public int compareTo(PeerMetadata other) {
+        return Double.compare(this.dataRate, other.dataRate);
+    }
+
+    public void setIsOptimisticallyUnChockedNeighbor(int isOptimisticallyUnChokedNeighbor) {
+        this.isOptimisticallyUnChokedNeighbor = isOptimisticallyUnChokedNeighbor;
+    }
+
+    public int getPeerState() {
+        return peerState;
+    }
+
+    public void setPreviousPeerState(int peerState) {
+        this.previousPeerState = previousPeerState;
+    }
+
+    public void setIsHandShakeComplete(int isHandShaked) {
+        this.isHandShaked = isHandShaked;
+    }
+
+    public void setStartTime(Date startTime) {
+        this.startTime = startTime;
+    }
+
+    public void setEndTime(Date endTime) {
+        this.endTime = endTime;
+    }
+
+    public Date getEndTime() {
+        return endTime;
+    }
+
+    public Date getStartTime() {
+        return startTime;
+    }
+
+    public void setDataRate(double dataRate) {
+        this.dataRate = dataRate;
+    }
+
+    public int getPreviousPeerState() {
+        return previousPeerState;
+    }
+
+    public BitField getBitFieldMessage() {
+        return bitFieldMessage;
+    }
+
+    public void setBitFieldMessage(BitField bitField) {
+        this.bitFieldMessage = bitField;
+    }
+
+    /**
+     * This method is used to update peerID entry with hasFile parameter in PeerInfo.cfg file
+     * @param currentPeerID - peerID to updated
+     * @param hasFile - value by which peerID should be updated
+     * @throws IOException
+     */
+    public void updatePeerDetails(String currentPeerID, int hasFile) throws IOException {
+        Path path = Paths.get("PeerInfo.cfg");
+        Stream<String> lines = Files.lines(path);
+
+        List<String> newLines = lines.map(line ->
+                {
+                    String newLine = line;
+                    String[] tokens = line.trim().split("\\s+");
+                    if (tokens[0].equals(currentPeerID)) {
+                        newLine = tokens[0] + " " + tokens[1] + " " + tokens[2] + " " + hasFile;
+                    }
+
+                    return newLine;
+                }
+        ).collect(Collectors.toList());
+        Files.write(path, newLines);
+        lines.close();
+    }
 }

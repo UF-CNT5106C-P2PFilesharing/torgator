@@ -48,7 +48,7 @@ public class FilePiece {
         this.isPieceAvailable = isPieceAvailable;
     }
 
-    public FilePiece getFilePieceFromPayload(byte[] payload) {
+    public static FilePiece getFilePieceFromPayload(byte[] payload) {
         byte[] indexBytes = new byte[Constants.PIECE_INDEX_LENGTH];
         FilePiece filePiece = new FilePiece();
         System.arraycopy(payload, 0, indexBytes, 0, Constants.PIECE_INDEX_LENGTH);
