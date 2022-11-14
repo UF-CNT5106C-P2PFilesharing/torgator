@@ -68,7 +68,7 @@ public class PreferredNeighbors extends TimerTask {
                 if (Peer.remotePeerDetails.get(preferredPeer.getId()).getIsChoked() == 1) {
                     sendUnChokedMessage(Peer.peerToSocketMap.get(preferredPeer.getId()), preferredPeer.getId());
                     Peer.remotePeerDetails.get(preferredPeer.getId()).setIsChoked(0);
-                    sendHaveMessage(Peer.peerToSocketMap.get(preferredPeer.getId()), preferredPeer.getId());
+                    sendHaveMessage(Peer.peerToSocketMap.get(preferredPeer.getId()));
                     Peer.remotePeerDetails.get(preferredPeer.getId()).setPeerState(3);
                 }
             }
@@ -109,9 +109,8 @@ public class PreferredNeighbors extends TimerTask {
     /**
      * This method is used to send HAVE message to socket
      * @param socket - socket in which the message to be sent
-     * @param peerID - peerID to which the message should be sent
      */
-    private void sendHaveMessage(Socket socket, String peerID) {
+    private void sendHaveMessage(Socket socket) {
         byte[] bitFieldInBytes = Peer.bitFieldMessage.getFilePieceBytesEncoded();
         try {
             Msg message = new Msg(Constants.HAVE, bitFieldInBytes);

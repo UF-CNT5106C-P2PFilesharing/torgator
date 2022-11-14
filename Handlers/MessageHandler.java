@@ -62,6 +62,7 @@ public class MessageHandler implements Runnable {
         }
         // Sending BitField...
         Msg m = new Msg(Constants.BITFIELD, Peer.bitFieldMessage.getFilePieceBytesEncoded());
+        System.out.println("Payload: " + Arrays.toString(Peer.bitFieldMessage.getFilePieceBytesEncoded()));
         byte[] b = Msg.serializeMessage(m);
         outputStream.write(b);
         // set remote peer state
@@ -170,7 +171,7 @@ public class MessageHandler implements Runnable {
             processMessages();
         }
         catch (Exception e) {
-            System.out.println(Arrays.toString(e.getStackTrace()));
+            System.out.println(Arrays.toString(e.getStackTrace()) + ": " + e.toString());
         }
     }
 

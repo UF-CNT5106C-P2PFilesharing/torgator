@@ -15,7 +15,6 @@ public class PeerMetadata {
     private String id;
     private String hostAddress;
     private String port;
-    private int hasFile;
     private int index;
     private int peerState = -1;
     private int previousPeerState = -1;
@@ -30,11 +29,11 @@ public class PeerMetadata {
     private Date endTime;
     private double dataRate;
 
-    public PeerMetadata(String id, String hostAddress, String port, int hasFile, int index) {
+    public PeerMetadata(String id, String hostAddress, String port, int hasCompleteFile, int index) {
         this.id = id;
         this.hostAddress = hostAddress;
         this.port = port;
-        this.hasFile = hasFile;
+        this.hasCompleteFile = hasCompleteFile;
         this.index = index;
         this.dataRate = 0;
         this.isOptimisticallyUnChokedNeighbor = 0;
@@ -92,10 +91,6 @@ public class PeerMetadata {
 
     public int getIndex() {
         return index;
-    }
-
-    public int getHasFile() {
-        return hasFile;
     }
 
     public String getHostAddress() {

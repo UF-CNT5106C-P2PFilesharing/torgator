@@ -38,7 +38,7 @@ public class HandShakeMsg {
     }
 
     public static HandShakeMsg deserializeHandShakeMsg(byte[] handShakeMessageInBytes) throws ArrayStoreException, UnsupportedEncodingException {
-        HandShakeMsg message = null;
+        HandShakeMsg message;
         byte[] header = new byte[Constants.HANDSHAKE_HEADER_LENGTH];
         byte[] peerId = new byte[Constants.HANDSHAKE_PEERID_LENGTH];
 

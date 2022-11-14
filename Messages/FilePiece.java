@@ -32,10 +32,6 @@ public class FilePiece {
         this.content = content;
     }
 
-    public String getFromPeer() {
-        return fromPeer;
-    }
-
     public void setFromPeer(String fromPeer) {
         this.fromPeer = fromPeer;
     }

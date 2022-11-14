@@ -5,7 +5,6 @@ import Logging.Helper;
 import Process.Peer;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.Arrays;
@@ -19,7 +18,7 @@ public class BitField {
         int pieceSize = SystemConfiguration.pieceSize;
         this.numPieces = (int) Math.ceil((double) fileSize / (double) pieceSize);
         this.filePieces = new FilePiece[this.numPieces];
-        Arrays.setAll(filePieces, index -> new FilePiece());
+        Arrays.setAll(this.filePieces, index -> new FilePiece());
     }
 
     public void setPieceDetails(String peerId, int hasFile) {

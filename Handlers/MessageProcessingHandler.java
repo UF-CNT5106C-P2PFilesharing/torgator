@@ -497,6 +497,7 @@ public class MessageProcessingHandler implements Runnable {
     private void sendInterestedMessage(Socket socket, String remotePeerID) {
         logMessage(peerId + " sending an INTERESTED message to Peer " + remotePeerID);
         Msg message = new Msg(Constants.INTERESTED);
+        System.out.println("Message Type is :" + message.getType());
         byte[] messageInBytes = new byte[0];
         try {
             messageInBytes = Msg.serializeMessage(message);
