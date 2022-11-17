@@ -16,12 +16,12 @@ import java.util.Arrays;
 
 public class MessageHandler implements Runnable {
     private final Socket socket;
-    private InputStream inputStream;
-    private OutputStream outputStream;
+    private final InputStream inputStream;
+    private final OutputStream outputStream;
     private HandShakeMsg handShakeMsg;
     public String id;
     public String remotePeerId;
-    private int connectionType;
+    private final int connectionType;
 
     public MessageHandler(String id, int connectionType, String address, int port) throws IOException {
         this.id = id;
@@ -62,7 +62,6 @@ public class MessageHandler implements Runnable {
         }
         // Sending BitField...
         Msg m = new Msg(Constants.BITFIELD, Peer.bitFieldMessage.getFilePieceBytesEncoded());
-        System.out.println("Payload: " + Arrays.toString(Peer.bitFieldMessage.getFilePieceBytesEncoded()));
         byte[] b = Msg.serializeMessage(m);
         outputStream.write(b);
         // set remote peer state
@@ -71,7 +70,7 @@ public class MessageHandler implements Runnable {
 
     public void processPassiveConnection() throws Exception {
         byte[] messageBytes = new byte[32];
-        while (!Thread.currentThread().isInterrupted()) {
+        while (true) {
             if (inputStream.read(messageBytes) > 0) {
                 handShakeMsg = HandShakeMsg.deserializeHandShakeMsg(messageBytes);
                 if (handShakeMsg.getHeader().equals(Constants.HANDSHAKE_HEADER)) {
@@ -153,12 +152,17 @@ public class MessageHandler implements Runnable {
         }
     }
 
+    /**
+     * This method is run everytime MessageHandler thread is started.
+     * It supports 2 types of connection
+     * Active Connection : It performs initial handshake and bitfield messages sending to socket.
+     * Passive Connection : It reads messages from socket and adds them to message queue.
+     */
     @Override
     public void run() {
         try {
             if (connectionType == Constants.ACTIVE_CONNECTION) {
-                boolean handShaked = initiateHandshake();
-                if (handShaked) {
+                if (initiateHandshake()) {
                     Helper.logMessage(this.id + "Handshake Message sent.");
                     exchangeBitfield();
                 } else {
@@ -173,45 +177,5 @@ public class MessageHandler implements Runnable {
         catch (Exception e) {
             System.out.println(Arrays.toString(e.getStackTrace()) + ": " + e.toString());
         }
-    }
-
-    public InputStream getInputStream() {
-        return inputStream;
-    }
-
-    public void setInputStream(InputStream inputStream) {
-        this.inputStream = inputStream;
-    }
-
-    public OutputStream getOutputStream() {
-        return outputStream;
-    }
-
-    public void setOutputStream(OutputStream outputStream) {
-        this.outputStream = outputStream;
-    }
-
-    public HandShakeMsg getHandShakeMsg() {
-        return handShakeMsg;
-    }
-
-    public void setHandShakeMsg(HandShakeMsg handShakeMsg) {
-        this.handShakeMsg = handShakeMsg;
-    }
-
-    public int getConnectionType() {
-        return connectionType;
-    }
-
-    public void setConnectionType(int connectionType) {
-        this.connectionType = connectionType;
-    }
-
-    public String getRemotePeerId() {
-        return remotePeerId;
-    }
-
-    public void setRemotePeerId(String remotePeerId) {
-        this.remotePeerId = remotePeerId;
     }
 }

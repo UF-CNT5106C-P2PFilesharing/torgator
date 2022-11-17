@@ -15,9 +15,6 @@ import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.util.Date;
 import java.util.Set;
-import java.util.stream.IntStream;
-
-import static Logging.Helper.log;
 import static Logging.Helper.logMessage;
 
 public class MessageProcessingHandler implements Runnable {
@@ -28,6 +25,56 @@ public class MessageProcessingHandler implements Runnable {
 
     public MessageProcessingHandler(String peerID) {
         peerId = peerID;
+    }
+
+    /**
+     * This method runs everytime MessageProcessingHandler thread is spawned.
+     * It reads messages from message queue and processes them.
+     * It sends the appropriate messages based on the type of message received.
+     */
+    @Override
+    public void run() {
+        while (!Thread.currentThread().isInterrupted()) {
+            //Poll the message queue
+            while (MessageQueue.hasNext()) {
+                MessageMetadata messageDetails = MessageQueue.getMessageFromQueue();
+                Msg message = messageDetails.getMsg();
+                String messageType = message.getType();
+                String remotePeerID = messageDetails.getSenderId();
+                int peerState = Peer.remotePeerDetails.get(remotePeerID).getPeerState();
+
+                if (messageType.equals(Constants.HAVE) && peerState != 14)
+                    processInterestingPieces(message, messageType, peerState, remotePeerID);
+                else {
+                    switch (peerState) {
+                        case 2:
+                            processBitFieldMessage(messageType, remotePeerID);
+                            break;
+                        case 3:
+                            processInterestsRequest(messageType, remotePeerID);
+                            break;
+                        case 4:
+                            processFileRequest(message, messageType, remotePeerID);
+                        case 8:
+                            acknowledgeBitFieldMessage(message, messageType, remotePeerID);
+                            break;
+                        case 9:
+                            processChokeUnChokeRequest(messageType, remotePeerID);
+                            break;
+                        case 11:
+                            processReceivedFilePiece(message, messageType, remotePeerID);
+                            break;
+                        case 14:
+                            processHaveRequest(message, messageType, remotePeerID);
+                            break;
+                        case 15:
+                            processPeerDownloadCompleteState(remotePeerID);
+                            break;
+
+                    }
+                }
+            }
+        }
     }
 
     private void processInterestingPieces(Msg message, String messageType, int peerState, String remotePeerId) {
@@ -189,7 +236,7 @@ public class MessageProcessingHandler implements Runnable {
                 PeerMetadata peerDetails = Peer.remotePeerDetails.get(key);
                 //send have message to peer if its interested
                 if (!key.equals(Peer.peerID) && isPeerInterested(peerDetails)) {
-                    sendHaveMessage(Peer.peerToSocketMap.get(key), key);
+                    sendHaveMessage(Peer.peerToSocketMap.get(key));
                     Peer.remotePeerDetails.get(key).setPeerState(3);
                 }
             }
@@ -225,61 +272,12 @@ public class MessageProcessingHandler implements Runnable {
     private void processPeerDownloadCompleteState(String remotePeerID) {
         try {
             //update neighbor details after it gets file completely
-            Peer.remotePeerDetails.get(Peer.peerID).updatePeerDetails(remotePeerID, 1);
+            Peer.remotePeerDetails.get(Peer.peerID).updatePeerMetadata(remotePeerID, 1);
             logMessage(remotePeerID + " has downloaded the complete file");
             int previousState = Peer.remotePeerDetails.get(remotePeerID).getPreviousPeerState();
             Peer.remotePeerDetails.get(remotePeerID).setPeerState(previousState);
         } catch (IOException e) {
             e.printStackTrace();
-        }
-    }
-
-    /**
-     * This method runs everytime PeerMessageProcessingHandler thread is spawned.
-     * It reads messages from message queue and processes them. It sends the appropriate messages based on the type of message received.
-     */
-    @Override
-    public void run() {
-        while (!Thread.currentThread().isInterrupted()) {
-            //Poll the message queue
-            while (MessageQueue.hasNext()) {
-                MessageMetadata messageDetails = MessageQueue.getMessageFromQueue();
-                Msg message = messageDetails.getMsg();
-                String messageType = message.getType();
-                String remotePeerID = messageDetails.getSenderId();
-                int peerState = Peer.remotePeerDetails.get(remotePeerID).getPeerState();
-
-                if (messageType.equals(Constants.HAVE) && peerState != 14)
-                    processInterestingPieces(message, messageType, peerState, remotePeerID);
-                else {
-                    switch (peerState) {
-                        case 2:
-                            processBitFieldMessage(messageType, remotePeerID);
-                            break;
-                        case 3:
-                            processInterestsRequest(messageType, remotePeerID);
-                            break;
-                        case 4:
-                            processFileRequest(message, messageType, remotePeerID);
-                        case 8:
-                            acknowledgeBitFieldMessage(message, messageType, remotePeerID);
-                            break;
-                        case 9:
-                            processChokeUnChokeRequest(messageType, remotePeerID);
-                            break;
-                        case 11:
-                            processReceivedFilePiece(message, messageType, remotePeerID);
-                            break;
-                        case 14:
-                            processHaveRequest(message, messageType, remotePeerID);
-                            break;
-                        case 15:
-                            processPeerDownloadCompleteState(remotePeerID);
-                            break;
-
-                    }
-                }
-            }
         }
     }
 
@@ -313,13 +311,12 @@ public class MessageProcessingHandler implements Runnable {
      * This method is used to send HAVE message to socket
      *
      * @param socket - socket in which the message to be sent
-     * @param peerID - peerID to which the message should be sent
      */
-    private void sendHaveMessage(Socket socket, String peerID) {
+    private void sendHaveMessage(Socket socket) {
         byte[] bitFieldInBytes = Peer.bitFieldMessage.getFilePieceBytesEncoded();
         try {
             Msg message = new Msg(Constants.HAVE, bitFieldInBytes);
-            SendMessageToSocket(socket, Msg.serializeMessage(message));
+            sendMessageToSocket(socket, Msg.serializeMessage(message));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -331,7 +328,7 @@ public class MessageProcessingHandler implements Runnable {
      * @param socket         - socket in which the message to be sent
      * @param messageInBytes - message to be sent
      */
-    private void SendMessageToSocket(Socket socket, byte[] messageInBytes) {
+    private void sendMessageToSocket(Socket socket, byte[] messageInBytes) {
         try {
             OutputStream out = socket.getOutputStream();
             out.write(messageInBytes);
@@ -355,7 +352,7 @@ public class MessageProcessingHandler implements Runnable {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        SendMessageToSocket(socket, messageInBytes);
+        sendMessageToSocket(socket, messageInBytes);
     }
 
     /**
@@ -367,15 +364,10 @@ public class MessageProcessingHandler implements Runnable {
      */
     private void sendRequestMessage(Socket socket, int pieceIndex, String remotePeerID) {
         logMessage(Peer.peerID + " sending REQUEST message to Peer " + remotePeerID + " for piece " + pieceIndex);
-        int pieceIndexLength = Constants.PIECE_INDEX_LENGTH;
-//        byte[] pieceInBytes = new byte[pieceIndexLength];
-//        IntStream.range(0, pieceIndexLength).forEach(i -> pieceInBytes[i] = 0);
-
         byte[] pieceIndexInBytes = ByteBuffer.allocate(4).putInt(pieceIndex).array();
-//        System.arraycopy(pieceIndexInBytes, 0, pieceInBytes, 0, pieceIndexInBytes.length);
         try {
             Msg message = new Msg(Constants.REQUEST, pieceIndexInBytes);
-            SendMessageToSocket(socket, Msg.serializeMessage(message));
+            sendMessageToSocket(socket, Msg.serializeMessage(message));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -396,9 +388,8 @@ public class MessageProcessingHandler implements Runnable {
 
         byte[] bytesRead = new byte[pieceSize];
         int numberOfBytesRead = 0;
-        File file = new File(peerId, SystemConfiguration.fileName);
-        try {
-            RandomAccessFile randomAccessFile = new RandomAccessFile(file, "r");
+        File file = new File(Peer.peerFolder, SystemConfiguration.fileName);
+        try(RandomAccessFile randomAccessFile = new RandomAccessFile(file, "r")) {
             randomAccessFile.seek(pieceIndex * pieceSize);
             numberOfBytesRead = randomAccessFile.read(bytesRead, 0, pieceSize);
 
@@ -407,9 +398,9 @@ public class MessageProcessingHandler implements Runnable {
             System.arraycopy(bytesRead, 0, buffer, Constants.PIECE_INDEX_LENGTH, numberOfBytesRead);
 
             Msg messageToBeSent = new Msg(Constants.PIECE, buffer);
-            SendMessageToSocket(socket, Msg.serializeMessage(messageToBeSent));
-            randomAccessFile.close();
-        } catch (Exception ignored) {
+            sendMessageToSocket(socket, Msg.serializeMessage(messageToBeSent));
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
@@ -449,7 +440,7 @@ public class MessageProcessingHandler implements Runnable {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        SendMessageToSocket(socket, messageInBytes);
+        sendMessageToSocket(socket, messageInBytes);
     }
 
     /**
@@ -467,7 +458,7 @@ public class MessageProcessingHandler implements Runnable {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        SendMessageToSocket(socket, messageInBytes);
+        sendMessageToSocket(socket, messageInBytes);
     }
 
     /**
@@ -485,7 +476,7 @@ public class MessageProcessingHandler implements Runnable {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        SendMessageToSocket(socket, messageInBytes);
+        sendMessageToSocket(socket, messageInBytes);
     }
 
     /**
@@ -504,7 +495,7 @@ public class MessageProcessingHandler implements Runnable {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        SendMessageToSocket(socket, messageInBytes);
+        sendMessageToSocket(socket, messageInBytes);
     }
 
     /**
@@ -519,7 +510,7 @@ public class MessageProcessingHandler implements Runnable {
         try {
             Msg message = new Msg(Constants.BITFIELD, bitFieldMessageInByteArray);
             byte[] messageInBytes = Msg.serializeMessage(message);
-            SendMessageToSocket(socket, messageInBytes);
+            sendMessageToSocket(socket, messageInBytes);
         }
         catch (Exception ignored) {
         }

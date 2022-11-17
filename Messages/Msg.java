@@ -98,7 +98,10 @@ public class Msg {
                 System.arraycopy(message.getTypeAsBytes(), 0, serializedMessage, Constants.MESSAGE_LENGTH, Constants.MESSAGE_TYPE);
             }
         }
-        else throw new Exception("Invalid message Type");
+        else {
+            System.out.println("Message Type: " + messageType);
+            throw new Exception("Invalid message Type");
+        }
         return serializedMessage;
     }
 

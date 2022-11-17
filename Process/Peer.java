@@ -29,6 +29,7 @@ public class Peer {
     public static ExecutorService fileServerThread = Executors.newSingleThreadExecutor();
     public static ServerSocket fileServingSocket = null;
     public static String peerID;
+    public static String peerFolder;
     public static int peerIndex;
     public static boolean isFirstPeer = false;
     public static int peerPort;
@@ -46,6 +47,7 @@ public class Peer {
 
     public static void main(String[] args) {
         peerID = args[0];
+        peerFolder = "peer_" + peerID;
 
         try {
             Helper logHelper = new Helper();
@@ -91,24 +93,11 @@ public class Peer {
      * This method is to used to set current peer details
      */
     public static void setCurrentPeerDetails() {
-//        Set<String> remotePeerIDs = remotePeerDetails.keySet();
         PeerMetadata peerMetadata = remotePeerDetails.get(peerID);
         peerPort = Integer.parseInt(peerMetadata.getPort());
         peerIndex = peerMetadata.getIndex();
         isFirstPeer = peerMetadata.getHasCompleteFile() == 1;
         peerHasFile = peerMetadata.getHasCompleteFile();
-//        for (String peerID : remotePeerIDs) {
-//            PeerMetadata remotePeerMetadata = remotePeerDetails.get(peerID);
-//            if (remotePeerMetadata.getId().equals(peerID)) {
-//                peerPort = Integer.parseInt(remotePeerMetadata.getPort());
-//                peerIndex = remotePeerMetadata.getIndex();
-//                if (remotePeerMetadata.getHasFile() == 1) {
-//                    isFirstPeer = true;
-//                    peerHasFile = remotePeerMetadata.getHasFile();
-//                    break;
-//                }
-//            }
-//        }
     }
 
     /**
@@ -116,7 +105,7 @@ public class Peer {
      */
     public static void initializeBitFieldMessage() {
         bitFieldMessage = new BitField();
-        bitFieldMessage.setPieceDetails(peerID, peerHasFile);
+        bitFieldMessage.setPieceDetails(peerHasFile);
     }
 
     /**
@@ -142,9 +131,9 @@ public class Peer {
      * This method is used to create empty file with size 'SystemConfiguration.fileSize' and set zero bits into it
      */
     public static void createNewFile() {
-            File dir = new File(peerID);
+            File dir = new File(peerFolder);
             if(dir.mkdir()) {
-                File emptyFile = new File(peerID, SystemConfiguration.fileName);
+                File emptyFile = new File(peerFolder, SystemConfiguration.fileName);
                 try (OutputStream os = new FileOutputStream(emptyFile, true)) {
                     byte b = 0;
 
@@ -160,10 +149,7 @@ public class Peer {
      * This method is used to start file receiver threads
      */
     public static void startFileReceivingThreads() throws IOException {
-        System.out.println("Peer id :" + peerID + " first peer :" + isFirstPeer);
-//        PeerMetadata peerMetadata = remotePeerDetails.get(peerID);
-//        receivingThreads.execute(new MessageHandler(peerID, 1, peerMetadata.getHostAddress(), Integer.parseInt(peerMetadata.getPort())));
-        Set<String> remotePeerMetaDataKeys = remotePeerDetails.keySet();
+       Set<String> remotePeerMetaDataKeys = remotePeerDetails.keySet();
         for (String remotePeerID : remotePeerMetaDataKeys) {
             PeerMetadata peerMetadata = remotePeerDetails.get(remotePeerID);
 
@@ -178,7 +164,7 @@ public class Peer {
      */
     public static void startFileServingThread() {
         try {
-            //Start a new file server thread
+            //Start a new file serving socket inside a thread
             fileServingSocket = new ServerSocket(peerPort);
             fileServerThread.execute(new FileServerHandler(fileServingSocket, peerID));
         } catch (SocketTimeoutException e) {
@@ -221,7 +207,7 @@ public class Peer {
                 receivingThreads.shutdown();
                 servingThreads.shutdown();
                 fileServerThread.shutdown();
-                break;
+                return;
             }
         }
     }
@@ -318,7 +304,7 @@ public class Peer {
         for (String otherPeerId : remotePeerIDs) {
             PeerMetadata peerMetadata = remotePeerDetails.get(peerID);
             if (peerMetadata != null && !peerID.equals(otherPeerId)) {
-                preferredNeighbours.put(peerID, peerMetadata);
+                preferredNeighbours.put(otherPeerId, peerMetadata);
             }
         }
     }

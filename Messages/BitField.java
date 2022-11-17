@@ -21,10 +21,10 @@ public class BitField {
         Arrays.setAll(this.filePieces, index -> new FilePiece());
     }
 
-    public void setPieceDetails(String peerId, int hasFile) {
-        for (FilePiece filePiece : filePieces) {
-            filePiece.setIsPieceAvailable(hasFile == 1 ? 1 : 0);
-            filePiece.setFromPeer(peerId);
+    public void setPieceDetails(int hasFile) {
+        for (int i = 0; i < filePieces.length; i++) {
+            filePieces[i].setIsPieceAvailable(hasFile == 1 ? 1 : 0);
+            filePieces[i].setPieceIndex(i);
         }
     }
 
@@ -39,8 +39,9 @@ public class BitField {
             int num = 0;
             for (int b = 0; b < 8; b++) {
                 num = num << 1;
-                num += (bits[byte_n * 8 + b] == 1) ? 1 : 0;
+                num |= (bits[byte_n * 8 + b] == 1) ? 1 : 0;
             }
+            System.out.println("The number came out to be :" + num);
             filePieceByteEncoded[byte_n] = (byte) num;
         }
         return filePieceByteEncoded;
@@ -51,7 +52,7 @@ public class BitField {
         for (int byte_n = 0; byte_n < bitField.length; byte_n++) {
             for(int bit_n = 0; bit_n < 8; bit_n++) {
                 if(byte_n * 8 + bit_n < bitFieldMessage.getNumPieces())
-                    bitFieldMessage.getFilePieces()[byte_n * 8 + bit_n].setIsPieceAvailable(((bitField[byte_n] & (1 << bit_n)) == 0) ? 0 : 1);
+                    bitFieldMessage.getFilePieces()[byte_n * 8 + bit_n].setIsPieceAvailable((((0xff & bitField[byte_n]) & (1 << (8 - bit_n - 1))) == 0) ? 0 : 1);
                 else break;
             }
         }
@@ -79,41 +80,19 @@ public class BitField {
         return isFileDownloaded;
     }
 
-    public synchronized int getFirstInterestingPieceIndex(BitField bitFieldMessage) {
-        int numberOfPieces = bitFieldMessage.getNumberOfAvailablePieces();
-        int interestingPiece = -1;
-
-        for (int i = 0; i < numberOfPieces; i++) {
-            if (bitFieldMessage.getFilePieces()[i].getIsPieceAvailable() == 1
-                    && this.getFilePieces()[i].getIsPieceAvailable() == 0) {
-                interestingPiece = i;
+    public synchronized int getFirstDifferentPieceIndex(BitField bitFieldMessage) {
+        int peerPieces = numPieces;
+        int remotePeerPieces = bitFieldMessage.getNumPieces();
+        System.out.println("Remote peer number of pieces: " + remotePeerPieces);
+        System.out.println("Current peer number of pieces: " + peerPieces);
+        int pieceIndex = -1;
+        for (int i = 0; i < Math.min(remotePeerPieces, peerPieces); i++) {
+            if (filePieces[i].getIsPieceAvailable() == 0 && bitFieldMessage.getFilePieces()[i].getIsPieceAvailable() == 1) {
+                pieceIndex = i;
                 break;
             }
         }
-
-        return interestingPiece;
-    }
-
-    public synchronized int getFirstDifferentPieceIndex(BitField bitFieldMessage) {
-        int peerPieces = this.numPieces;
-        int remotePeerPieces = bitFieldMessage.getNumPieces();
-        int pieceIndex = -1;
-
-        if (remotePeerPieces >= peerPieces) {
-            for (int i = 0; i < peerPieces; i++) {
-                if (filePieces[i].getIsPieceAvailable() == 0 && bitFieldMessage.getFilePieces()[i].getIsPieceAvailable() == 1) {
-                    pieceIndex = i;
-                    break;
-                }
-            }
-        } else {
-            for (int i = 0; i < remotePeerPieces; i++) {
-                if (filePieces[i].getIsPieceAvailable() == 0 && bitFieldMessage.getFilePieces()[i].getIsPieceAvailable() == 1) {
-                    pieceIndex = i;
-                    break;
-                }
-            }
-        }
+        System.out.println("Piece Index selected: " + pieceIndex);
         return pieceIndex;
     }
 
@@ -123,7 +102,7 @@ public class BitField {
            if(!isDuplicatePiece(pieceIndex)){
                 String fileName = SystemConfiguration.fileName;
 
-                File file = new File(Peer.peerID, fileName);
+                File file = new File(Peer.peerFolder, fileName);
                 int offSet = pieceIndex * SystemConfiguration.pieceSize;
                 RandomAccessFile randomAccessFile = new RandomAccessFile(file, "rw");
                 byte[] pieceToWrite = filePiece.getContent();
@@ -131,7 +110,6 @@ public class BitField {
                 randomAccessFile.write(pieceToWrite);
 
                 filePieces[pieceIndex].setIsPieceAvailable(1);
-                filePieces[pieceIndex].setFromPeer(peerID);
                 randomAccessFile.close();
                 Helper.logMessage(Peer.peerID + " received the PIECE " + pieceIndex
                         + " from Peer " + peerID + ". Current piece count: "

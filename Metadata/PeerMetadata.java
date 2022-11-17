@@ -12,10 +12,10 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class PeerMetadata {
-    private String id;
-    private String hostAddress;
-    private String port;
-    private int index;
+    private final String id;
+    private final String hostAddress;
+    private final String port;
+    private final int index;
     private int peerState = -1;
     private int previousPeerState = -1;
     private int isPreferredNeighbor = 0;
@@ -37,24 +37,6 @@ public class PeerMetadata {
         this.index = index;
         this.dataRate = 0;
         this.isOptimisticallyUnChokedNeighbor = 0;
-    }
-
-    public void updatePeerMetadata(String peerId, int hasFile) throws IOException {
-        Path path = Paths.get("Configurations","PeerInfo.cfg");
-        Stream<String> lines = Files.lines(path);
-
-        List<String> newLines = lines.map(line ->
-                {
-                    String newLine = line;
-                    String[] tokens = line.trim().split("\\s+");
-                    if (tokens[0].equals(peerId)) {
-                        newLine = tokens[0] + " " + tokens[1] + " " + tokens[2] + " " + hasFile;
-                    }
-                    return newLine;
-                }
-        ).collect(Collectors.toList());
-        Files.write(path, newLines);
-        lines.close();
     }
 
     public int getIsInterested() {
@@ -117,7 +99,7 @@ public class PeerMetadata {
         return peerState;
     }
 
-    public void setPreviousPeerState(int peerState) {
+    public void setPreviousPeerState(int previousPeerState) {
         this.previousPeerState = previousPeerState;
     }
 
@@ -159,22 +141,21 @@ public class PeerMetadata {
 
     /**
      * This method is used to update peerID entry with hasFile parameter in PeerInfo.cfg file
-     * @param currentPeerID - peerID to updated
+     * @param peerId - peerID to updated
      * @param hasFile - value by which peerID should be updated
      * @throws IOException
      */
-    public void updatePeerDetails(String currentPeerID, int hasFile) throws IOException {
-        Path path = Paths.get("PeerInfo.cfg");
+    public void updatePeerMetadata(String peerId, int hasFile) throws IOException {
+        Path path = Paths.get("Configurations","PeerInfo2.cfg");
         Stream<String> lines = Files.lines(path);
 
         List<String> newLines = lines.map(line ->
                 {
                     String newLine = line;
                     String[] tokens = line.trim().split("\\s+");
-                    if (tokens[0].equals(currentPeerID)) {
+                    if (tokens[0].equals(peerId)) {
                         newLine = tokens[0] + " " + tokens[1] + " " + tokens[2] + " " + hasFile;
                     }
-
                     return newLine;
                 }
         ).collect(Collectors.toList());

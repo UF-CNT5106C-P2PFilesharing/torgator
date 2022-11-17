@@ -60,3 +60,4 @@ PreferredNeighbors.class: Tasks/PreferredNeighbors.java
 
 clean:
 	$(RM) *.class Configurations/*.class Messages/*.class Logging/*.class Metadata/*.class Queue/*.class Handlers/*.class Process/*.class Tasks/*.class log_*
+	$(RM) -r peer_100[2-9]*

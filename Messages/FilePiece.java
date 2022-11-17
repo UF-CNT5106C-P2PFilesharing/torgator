@@ -5,14 +5,12 @@ import java.nio.ByteBuffer;
 public class FilePiece {
     private int pieceIndex;
     private byte[] content;
-    private String fromPeer;
     private int isPieceAvailable;
 
 
     public FilePiece() {
         this.pieceIndex = -1;
         this.content = new byte[SystemConfiguration.pieceSize];
-        this.fromPeer = null;
         this.isPieceAvailable = 0;
     }
 
@@ -30,10 +28,6 @@ public class FilePiece {
 
     public void setContent(byte[] content) {
         this.content = content;
-    }
-
-    public void setFromPeer(String fromPeer) {
-        this.fromPeer = fromPeer;
     }
 
     public int getIsPieceAvailable() {
