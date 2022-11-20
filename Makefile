@@ -1,11 +1,12 @@
 JCC = javac
 JAVA = java
 JFLAGS = -g
+REMOTE_PEER_OPTS = -cp .:jsch.jar
 
-default: Peer.class
+default: peerProcess.class
 
-Peer.class: Process/Peer.java
-	$(JCC) $(JFLAGS) Process/Peer.java
+peerProcess.class: Process/peerProcess.java
+	$(JCC) $(JFLAGS) Process/peerProcess.java
 
 SystemConfiguration.class: Configurations/SystemConfiguration.java
 	$(JCC) $(JFLAGS) SystemConfiguration.java
@@ -46,9 +47,6 @@ MessageMetadata.class: Metadata/MessageMetadata.java
 PeerMetadata.class: Metadata/PeerMetadata.java
 	$(JCC) $(JFLAGS) Metadata/PeerMetadata.java
 
-Peer: Process/Peer.class
-	$(JAVA) Process/Peer 1001
-
 MessageQueue.class: Queue/MessageQueue.java
 	$(JCC) $(JFLAGS) Queue/MessageQueue.java
 
@@ -57,6 +55,15 @@ OptimisticallyUnChokedNeighbors.class: Tasks/OptimisticallyUnChokedNeighbors.jav
 
 PreferredNeighbors.class: Tasks/PreferredNeighbors.java
 	$(JCC) $(JFLAGS) Tasks/PreferredNeighbors.java
+
+peerProcess: Process/peerProcess.class
+	$(JAVA) Process/peerProcess 1001
+
+StartRemotePeers.class: Process/StartRemotePeers.java
+	$(JCC) $(JFLAGS) $(REMOTE_PEER_OPTS) Process/StartRemotePeers.java
+
+StartRemotePeers: Process/StartRemotePeers.class
+	$(JAVA) $(REMOTE_PEER_OPTS) Process/StartRemotePeers
 
 clean:
 	$(RM) *.class Configurations/*.class Messages/*.class Logging/*.class Metadata/*.class Queue/*.class Handlers/*.class Process/*.class Tasks/*.class log_*

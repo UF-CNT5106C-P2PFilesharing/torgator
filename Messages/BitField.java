@@ -2,7 +2,7 @@ package Messages;
 
 import Configurations.SystemConfiguration;
 import Logging.Helper;
-import Process.Peer;
+import Process.peerProcess;
 
 import java.io.File;
 import java.io.IOException;
@@ -102,7 +102,7 @@ public class BitField {
            if(!isDuplicatePiece(pieceIndex)){
                 String fileName = SystemConfiguration.fileName;
 
-                File file = new File(Peer.peerFolder, fileName);
+                File file = new File(peerProcess.peerFolder, fileName);
                 int offSet = pieceIndex * SystemConfiguration.pieceSize;
                 RandomAccessFile randomAccessFile = new RandomAccessFile(file, "rw");
                 byte[] pieceToWrite = filePiece.getContent();
@@ -111,27 +111,27 @@ public class BitField {
 
                 filePieces[pieceIndex].setIsPieceAvailable(1);
                 randomAccessFile.close();
-                Helper.logMessage(Peer.peerID + " received the PIECE " + pieceIndex
-                        + " from Peer " + peerID + ". Current piece count: "
-                        + Peer.bitFieldMessage.getNumberOfAvailablePieces());
+                Helper.logMessage(peerProcess.peerID + " received the PIECE " + pieceIndex
+                        + " from peerProcess " + peerID + ". Current piece count: "
+                        + peerProcess.bitFieldMessage.getNumberOfAvailablePieces());
 
-                if (Peer.bitFieldMessage.isFileDownloadComplete()) {
+                if (peerProcess.bitFieldMessage.isFileDownloadComplete()) {
                     //update file download details
-                    Peer.remotePeerDetails.get(peerID).setIsInterested(0);
-                    Peer.remotePeerDetails.get(peerID).setHasCompleteFile(1);
-                    Peer.remotePeerDetails.get(peerID).setIsChoked(0);
-                    Peer.remotePeerDetails.get(peerID).updatePeerMetadata(Peer.peerID, 1);
-                    Helper.logMessage(Peer.peerID + " finished DOWNLOADING the entire file.");
+                    peerProcess.remotePeerDetails.get(peerID).setIsInterested(0);
+                    peerProcess.remotePeerDetails.get(peerID).setHasCompleteFile(1);
+                    peerProcess.remotePeerDetails.get(peerID).setIsChoked(0);
+                    peerProcess.remotePeerDetails.get(peerID).updatePeerMetadata(peerProcess.peerID, 1);
+                    Helper.logMessage(peerProcess.peerID + " finished DOWNLOADING the entire file.");
                 }
             }
         } catch (IOException e) {
-            Helper.logMessage(Peer.peerID + " bitfield update error " + e.getMessage());
+            Helper.logMessage(peerProcess.peerID + " bitfield update error " + e.getMessage());
             e.printStackTrace();
         }
     }
 
     private boolean isDuplicatePiece(int pieceIndex) {
-        return Peer.bitFieldMessage.getFilePieces()[pieceIndex].getIsPieceAvailable() == 1;
+        return peerProcess.bitFieldMessage.getFilePieces()[pieceIndex].getIsPieceAvailable() == 1;
     }
 
     public synchronized int getInterestingPieceIndex(BitField bitFieldMessage) {

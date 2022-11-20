@@ -2,7 +2,8 @@ package Tasks;
 import Messages.Constants;
 import Messages.Msg;
 import Metadata.PeerMetadata;
-import Process.Peer;
+import Process.peerProcess;
+
 import static Logging.Helper.logMessage;
 
 import java.io.IOException;
@@ -21,15 +22,15 @@ public class OptimisticallyUnChokedNeighbors extends TimerTask {
      */
     @Override
     public void run() {
-        Peer.updateOtherPeerMetaData();
-        if (!Peer.optimisticUnChokedNeighbors.isEmpty()) Peer.optimisticUnChokedNeighbors.clear();
+        peerProcess.updateOtherPeerMetaData();
+        if (!peerProcess.optimisticUnChokedNeighbors.isEmpty()) peerProcess.optimisticUnChokedNeighbors.clear();
 
         //Collect all interested peers in a set
-        Set<String> keys = Peer.remotePeerDetails.keySet();
+        Set<String> keys = peerProcess.remotePeerDetails.keySet();
         Vector<PeerMetadata> remotePeerDetailsVector = new Vector<>();
         keys.forEach(key -> {
-            PeerMetadata peerMetadata = Peer.remotePeerDetails.get(key);
-            if (!key.equals(Peer.peerID) && isPeerInterested(peerMetadata)) remotePeerDetailsVector.add(peerMetadata);
+            PeerMetadata peerMetadata = peerProcess.remotePeerDetails.get(key);
+            if (!key.equals(peerProcess.peerID) && isPeerInterested(peerMetadata)) remotePeerDetailsVector.add(peerMetadata);
         });
 
         if(!remotePeerDetailsVector.isEmpty()) {
@@ -37,15 +38,15 @@ public class OptimisticallyUnChokedNeighbors extends TimerTask {
             Collections.shuffle(remotePeerDetailsVector);
             PeerMetadata peerMetadata = remotePeerDetailsVector.firstElement();
             peerMetadata.setIsOptimisticallyUnChockedNeighbor(1);
-            Peer.optimisticUnChokedNeighbors.put(peerMetadata.getId(), peerMetadata);
-            logMessage(Peer.peerID + " chose the optimistically unChoked neighbor " + peerMetadata.getId());
+            peerProcess.optimisticUnChokedNeighbors.put(peerMetadata.getId(), peerMetadata);
+            logMessage(peerProcess.peerID + " chose the optimistically unChoked neighbor " + peerMetadata.getId());
 
             if(peerMetadata.getIsChoked() == 1) {
                 //send unChoke message if choked
-                Peer.remotePeerDetails.get(peerMetadata.getId()).setIsChoked(0);
-                sendUnChokedMessage(Peer.peerToSocketMap.get(peerMetadata.getId()), peerMetadata.getId());
-                sendHaveMessage(Peer.peerToSocketMap.get(peerMetadata.getId()), peerMetadata.getId());
-                Peer.remotePeerDetails.get(peerMetadata.getId()).setPeerState(3);
+                peerProcess.remotePeerDetails.get(peerMetadata.getId()).setIsChoked(0);
+                sendUnChokedMessage(peerProcess.peerToSocketMap.get(peerMetadata.getId()), peerMetadata.getId());
+                sendHaveMessage(peerProcess.peerToSocketMap.get(peerMetadata.getId()), peerMetadata.getId());
+                peerProcess.remotePeerDetails.get(peerMetadata.getId()).setPeerState(3);
             }
         }
     }
@@ -65,7 +66,7 @@ public class OptimisticallyUnChokedNeighbors extends TimerTask {
      * @param remotePeerID - peerID to which the message should be sent
      */
     private void sendUnChokedMessage(Socket socket, String remotePeerID) {
-        logMessage(Peer.peerID + " sending a unChoke message to Peer " + remotePeerID);
+        logMessage(peerProcess.peerID + " sending a unChoke message to peerProcess " + remotePeerID);
         Msg message = new Msg(Constants.UNCHOKE);
         byte[] messageInBytes = new byte[0];
         try {
@@ -82,8 +83,8 @@ public class OptimisticallyUnChokedNeighbors extends TimerTask {
      * @param peerID - peerID to which the message should be sent
      */
     private void sendHaveMessage(Socket socket, String peerID) {
-        logMessage(Peer.peerID + " sending HAVE message to Peer " + peerID);
-        byte[] bitFieldInBytes = Peer.bitFieldMessage.getFilePieceBytesEncoded();
+        logMessage(peerProcess.peerID + " sending HAVE message to peerProcess " + peerID);
+        byte[] bitFieldInBytes = peerProcess.bitFieldMessage.getFilePieceBytesEncoded();
         Msg message = null;
         try {
             message = new Msg(Constants.HAVE, bitFieldInBytes);

@@ -6,7 +6,7 @@ import Messages.HandShakeMsg;
 import Metadata.MessageMetadata;
 import Messages.Msg;
 import Queue.MessageQueue;
-import Process.Peer;
+import Process.peerProcess;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -55,17 +55,17 @@ public class MessageHandler implements Runnable {
                     Helper.logMessage(id + " established a connection to " + remotePeerId);
                     Helper.logMessage(id + " Received a HANDSHAKE message from " + remotePeerId);
                     // populate peerID to socket mapping
-                    Peer.peerToSocketMap.put(remotePeerId, this.socket);
+                    peerProcess.peerToSocketMap.put(remotePeerId, this.socket);
                     break;
                 }
             }
         }
         // Sending BitField...
-        Msg m = new Msg(Constants.BITFIELD, Peer.bitFieldMessage.getFilePieceBytesEncoded());
+        Msg m = new Msg(Constants.BITFIELD, peerProcess.bitFieldMessage.getFilePieceBytesEncoded());
         byte[] b = Msg.serializeMessage(m);
         outputStream.write(b);
         // set remote peer state
-        Peer.remotePeerDetails.get(remotePeerId).setPeerState(8);
+        peerProcess.remotePeerDetails.get(remotePeerId).setPeerState(8);
     }
 
     public void processPassiveConnection() throws Exception {
@@ -75,11 +75,11 @@ public class MessageHandler implements Runnable {
                 handShakeMsg = HandShakeMsg.deserializeHandShakeMsg(messageBytes);
                 if (handShakeMsg.getHeader().equals(Constants.HANDSHAKE_HEADER)) {
                     remotePeerId = handShakeMsg.getPeerID();
-                    Helper.logMessage(id + " is connected from Peer " + remotePeerId);
-                    Helper.logMessage(id + " Received a HANDSHAKE message from Peer " + remotePeerId);
+                    Helper.logMessage(id + " is connected from peerProcess " + remotePeerId);
+                    Helper.logMessage(id + " Received a HANDSHAKE message from peerProcess " + remotePeerId);
 
                     // populate peerID to socket mapping
-                    Peer.peerToSocketMap.put(remotePeerId, this.socket);
+                    peerProcess.peerToSocketMap.put(remotePeerId, this.socket);
                     break;
                 }
             }
@@ -92,7 +92,7 @@ public class MessageHandler implements Runnable {
             System.exit(-1);
         }
          // set remote peer state
-        Peer.remotePeerDetails.get(remotePeerId).setPeerState(2);
+        peerProcess.remotePeerDetails.get(remotePeerId).setPeerState(2);
     }
 
     public void processMessages() throws IOException {
@@ -123,9 +123,9 @@ public class MessageHandler implements Runnable {
                 case Constants.MESSAGE_DOWNLOADED:
                     metadata.setMsg(message);
                     metadata.setSenderId(remotePeerId);
-                    int peerState = Peer.remotePeerDetails.get(remotePeerId).getPeerState();
-                    Peer.remotePeerDetails.get(remotePeerId).setPreviousPeerState(peerState);
-                    Peer.remotePeerDetails.get(remotePeerId).setPeerState(15);
+                    int peerState = peerProcess.remotePeerDetails.get(remotePeerId).getPeerState();
+                    peerProcess.remotePeerDetails.get(remotePeerId).setPreviousPeerState(peerState);
+                    peerProcess.remotePeerDetails.get(remotePeerId).setPeerState(15);
                     MessageQueue.addMessageToMessageQueue(metadata);
                     break;
                 default:

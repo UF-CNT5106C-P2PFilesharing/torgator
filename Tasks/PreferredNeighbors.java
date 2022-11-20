@@ -4,7 +4,7 @@ import Configurations.SystemConfiguration;
 import Messages.Constants;
 import Messages.Msg;
 import Metadata.PeerMetadata;
-import Process.Peer;
+import Process.peerProcess;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -17,13 +17,13 @@ public class PreferredNeighbors extends TimerTask {
 
     public void run() {
         int numInterested = 0;
-        Peer.updateOtherPeerMetaData();
-        Set<String> remotePeerIds = Peer.remotePeerDetails.keySet();
+        peerProcess.updateOtherPeerMetaData();
+        Set<String> remotePeerIds = peerProcess.remotePeerDetails.keySet();
         for(String key: remotePeerIds) {
-            PeerMetadata peerMetaData = Peer.remotePeerDetails.get(key);
-            if(!key.equals(Peer.peerID)) {
+            PeerMetadata peerMetaData = peerProcess.remotePeerDetails.get(key);
+            if(!key.equals(peerProcess.peerID)) {
                 if (peerMetaData.getHasCompleteFile() == 0 && peerMetaData.getIsInterested() == 1) numInterested++;
-                else if (peerMetaData.getHasCompleteFile() == 1) Peer.preferredNeighbours.remove(key);
+                else if (peerMetaData.getHasCompleteFile() == 1) peerProcess.preferredNeighbours.remove(key);
                 }
             }
         updatePreferredNeighbors(numInterested);
@@ -32,9 +32,9 @@ public class PreferredNeighbors extends TimerTask {
     public void updatePreferredNeighbors(int numInterestedPeers) {
         List<String> updatedPreferredNeighbors = new ArrayList<>();
         int numNeighborsToUpdate = Math.min(numInterestedPeers, SystemConfiguration.numberOfPreferredNeighbours);
-        if(!Peer.preferredNeighbours.isEmpty() && numInterestedPeers > SystemConfiguration.numberOfPreferredNeighbours) Peer.preferredNeighbours.clear();
-        ArrayList<PeerMetadata> preferredPeers = new ArrayList<>(Peer.remotePeerDetails.values());
-        int isCompleteFilePresent = Peer.remotePeerDetails.get(Peer.peerID).getHasCompleteFile();
+        if(!peerProcess.preferredNeighbours.isEmpty() && numInterestedPeers > SystemConfiguration.numberOfPreferredNeighbours) peerProcess.preferredNeighbours.clear();
+        ArrayList<PeerMetadata> preferredPeers = new ArrayList<>(peerProcess.remotePeerDetails.values());
+        int isCompleteFilePresent = peerProcess.remotePeerDetails.get(peerProcess.peerID).getHasCompleteFile();
         if (isCompleteFilePresent == 1) {
             Collections.shuffle(preferredPeers);
         } else {
@@ -57,24 +57,24 @@ public class PreferredNeighbors extends TimerTask {
             // add this peer to current peer's preferred neighbors list and un-choke it if choked
             // along with communicating by sending a have message to the peer and changing state to 3
             if (preferredPeer.getIsInterested() == 1 &&
-                    !preferredPeer.getId().equals(Peer.peerID) &&
-                    Peer.remotePeerDetails.get(preferredPeer.getId()).getHasCompleteFile() == 0) {
+                    !preferredPeer.getId().equals(peerProcess.peerID) &&
+                    peerProcess.remotePeerDetails.get(preferredPeer.getId()).getHasCompleteFile() == 0) {
 
-                Peer.remotePeerDetails.get(preferredPeer.getId()).setIsPreferredNeighbor(1);
-                Peer.preferredNeighbours.put(preferredPeer.getId(), Peer.remotePeerDetails.get(preferredPeer.getId()));
+                peerProcess.remotePeerDetails.get(preferredPeer.getId()).setIsPreferredNeighbor(1);
+                peerProcess.preferredNeighbours.put(preferredPeer.getId(), peerProcess.remotePeerDetails.get(preferredPeer.getId()));
 
                 updatedPreferredNeighbors.add(preferredPeer.getId());
 
-                if (Peer.remotePeerDetails.get(preferredPeer.getId()).getIsChoked() == 1) {
-                    sendUnChokedMessage(Peer.peerToSocketMap.get(preferredPeer.getId()), preferredPeer.getId());
-                    Peer.remotePeerDetails.get(preferredPeer.getId()).setIsChoked(0);
-                    sendHaveMessage(Peer.peerToSocketMap.get(preferredPeer.getId()));
-                    Peer.remotePeerDetails.get(preferredPeer.getId()).setPeerState(3);
+                if (peerProcess.remotePeerDetails.get(preferredPeer.getId()).getIsChoked() == 1) {
+                    sendUnChokedMessage(peerProcess.peerToSocketMap.get(preferredPeer.getId()), preferredPeer.getId());
+                    peerProcess.remotePeerDetails.get(preferredPeer.getId()).setIsChoked(0);
+                    sendHaveMessage(peerProcess.peerToSocketMap.get(preferredPeer.getId()));
+                    peerProcess.remotePeerDetails.get(preferredPeer.getId()).setPeerState(3);
                 }
             }
         }
         if (!updatedPreferredNeighbors.isEmpty()) {
-            logMessage(Peer.peerID + " has selected the preferred neighbors - " + String.join(",", updatedPreferredNeighbors));
+            logMessage(peerProcess.peerID + " has selected the preferred neighbors - " + String.join(",", updatedPreferredNeighbors));
         }
     }
 
@@ -84,7 +84,7 @@ public class PreferredNeighbors extends TimerTask {
      * @param remotePeerID - peerID to which the message should be sent
      */
     private static void sendUnChokedMessage(Socket socket, String remotePeerID) {
-        logMessage(Peer.peerID + " sending UNCHOKE message to Peer " + remotePeerID);
+        logMessage(peerProcess.peerID + " sending UNCHOKE message to peerProcess " + remotePeerID);
         Msg message = new Msg(Constants.UNCHOKE);
         try {
             SendMessageToSocket(socket, Msg.serializeMessage(message));
@@ -111,7 +111,7 @@ public class PreferredNeighbors extends TimerTask {
      * @param socket - socket in which the message to be sent
      */
     private void sendHaveMessage(Socket socket) {
-        byte[] bitFieldInBytes = Peer.bitFieldMessage.getFilePieceBytesEncoded();
+        byte[] bitFieldInBytes = peerProcess.bitFieldMessage.getFilePieceBytesEncoded();
         try {
             Msg message = new Msg(Constants.HAVE, bitFieldInBytes);
             SendMessageToSocket(socket, Msg.serializeMessage(message));

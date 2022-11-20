@@ -25,7 +25,7 @@ import static Configurations.SystemConfiguration.peerInfoFile;
 import static Configurations.SystemConfiguration.systemConfigurationFile;
 import static Logging.Helper.logMessage;
 
-public class Peer {
+public class peerProcess {
     public static ExecutorService fileServerThread = Executors.newSingleThreadExecutor();
     public static ServerSocket fileServingSocket = null;
     public static String peerID;
@@ -194,8 +194,8 @@ public class Peer {
     }
 
     /**
-     * This method is used to terminate the Peer process if all the peers have downloaded the files.
-     * It terminates all the threads related to the Peer.
+     * This method is used to terminate the peerProcess process if all the peers have downloaded the files.
+     * It terminates all the threads related to the peerProcess.
      */
     private static void terminatePeerAndCleanUp() {
         while (true) {
