@@ -41,7 +41,6 @@ public class BitField {
                 num = num << 1;
                 num |= (bits[byte_n * 8 + b] == 1) ? 1 : 0;
             }
-            System.out.println("The number came out to be :" + num);
             filePieceByteEncoded[byte_n] = (byte) num;
         }
         return filePieceByteEncoded;
@@ -83,8 +82,6 @@ public class BitField {
     public synchronized int getFirstDifferentPieceIndex(BitField bitFieldMessage) {
         int peerPieces = numPieces;
         int remotePeerPieces = bitFieldMessage.getNumPieces();
-        System.out.println("Remote peer number of pieces: " + remotePeerPieces);
-        System.out.println("Current peer number of pieces: " + peerPieces);
         int pieceIndex = -1;
         for (int i = 0; i < Math.min(remotePeerPieces, peerPieces); i++) {
             if (filePieces[i].getIsPieceAvailable() == 0 && bitFieldMessage.getFilePieces()[i].getIsPieceAvailable() == 1) {
@@ -92,7 +89,6 @@ public class BitField {
                 break;
             }
         }
-        System.out.println("Piece Index selected: " + pieceIndex);
         return pieceIndex;
     }
 

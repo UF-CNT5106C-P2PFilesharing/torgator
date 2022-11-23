@@ -56,36 +56,39 @@ public class StartRemotePeers {
             Session session;
             ChannelExec channel;
 
-            Scanner scanner = new Scanner(System.in);
-            System.out.println("Enter the username :");
-            String username = scanner.next();
-            System.out.println("Enter the password :");
-            String password = scanner.next();
+//            Scanner scanner = new Scanner(System.in);
+//            System.out.println("Enter the username :");
+//            String username = scanner.next();
+//            System.out.println("Enter the password :");
+//            String password = scanner.next();
 
             // start clients at remote hosts
+            System.out.println(path);
             for (int i = 0; i < myStart.peerInfoVector.size(); i++) {
                 PeerMetadata pInfo = myStart.peerInfoVector.elementAt(i);
 
                 System.out.println("Start remote peer " + pInfo.getId() +  " at " + pInfo.getHostAddress());
-                session = new JSch().getSession(username, pInfo.getHostAddress(), 22);
-                session.setPassword(password);
-                session.setConfig("StrictHostKeyChecking", "no");
-                session.connect();
+//                session = new JSch().getSession(username, pInfo.getHostAddress(), 22);
+//                session.setPassword(password);
+//                session.setConfig("StrictHostKeyChecking", "no");
+//                session.connect();
 
-                channel = (ChannelExec) session.openChannel("exec");
+//                channel = (ChannelExec) session.openChannel("exec");
                 String buildCommand = "cd " + path + "; make peerProcess.class";
                 String startSeederLeecher = "cd " + path + "; java peerProcess " + pInfo.getId();
                 if( i == 0) {
-                    channel.setCommand(buildCommand);
-                    ByteArrayOutputStream responseStream = new ByteArrayOutputStream();
-                    channel.setOutputStream(responseStream);
-                    channel.connect();
+//                    channel.setCommand(buildCommand);
+//                    ByteArrayOutputStream responseStream = new ByteArrayOutputStream();
+//                    channel.setOutputStream(responseStream);
+//                    channel.connect();
+                    Runtime.getRuntime().exec(buildCommand);
                     TimeUnit.SECONDS.sleep(3);
                 }
-                channel.setCommand(startSeederLeecher);
-                ByteArrayOutputStream responseStream = new ByteArrayOutputStream();
-                channel.setOutputStream(responseStream);
-                channel.connect();
+//                channel.setCommand(startSeederLeecher);
+//                ByteArrayOutputStream responseStream = new ByteArrayOutputStream();
+//                channel.setOutputStream(responseStream);
+//                channel.connect();
+                Runtime.getRuntime().exec(startSeederLeecher);
                 TimeUnit.SECONDS.sleep(3);
             }
             System.out.println("Starting all remote peers has done." );

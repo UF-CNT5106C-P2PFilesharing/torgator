@@ -2,7 +2,11 @@ package Metadata;
 
 import Messages.BitField;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.nio.channels.FileLock;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -10,6 +14,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static Configurations.SystemConfiguration.peerInfoFile;
 
 public class PeerMetadata {
     private final String id;
@@ -28,6 +34,7 @@ public class PeerMetadata {
     private Date startTime;
     private Date endTime;
     private double dataRate;
+    private static final File peerInfoConfigFile = new File(peerInfoFile);
 
     public PeerMetadata(String id, String hostAddress, String port, int hasCompleteFile, int index) {
         this.id = id;
@@ -145,21 +152,50 @@ public class PeerMetadata {
      * @param hasFile - value by which peerID should be updated
      * @throws IOException
      */
-    public void updatePeerMetadata(String peerId, int hasFile) throws IOException {
-        Path path = Paths.get("Configurations","PeerInfo2.cfg");
-        Stream<String> lines = Files.lines(path);
+//    public void updatePeerMetadata(String peerId, int hasFile) throws IOException {
+//        Path path = Paths.get(peerInfoFile);
+//        Stream<String> lines = Files.lines(path);
+//
+//        List<String> newLines = lines.map(line ->
+//                {
+//                    String newLine = line;
+//                    String[] tokens = line.trim().split("\\s+");
+//                    if (tokens[0].equals(peerId)) {
+//                        newLine = tokens[0] + " " + tokens[1] + " " + tokens[2] + " " + hasFile;
+//                    }
+//                    return newLine;
+//                }
+//        ).collect(Collectors.toList());
+//        Files.write(path, newLines);
+//        lines.close();
+//    }
 
-        List<String> newLines = lines.map(line ->
-                {
-                    String newLine = line;
-                    String[] tokens = line.trim().split("\\s+");
-                    if (tokens[0].equals(peerId)) {
-                        newLine = tokens[0] + " " + tokens[1] + " " + tokens[2] + " " + hasFile;
+    public void updatePeerMetadata(String peerId, int hasFile) throws IOException {
+        Path path = Paths.get(peerInfoFile);
+        List<String> newLines;
+        try(Stream<String> lines = Files.lines(path)) {
+
+             newLines = lines.map(line ->
+                    {
+                        String newLine = line;
+                        String[] tokens = line.trim().split("\\s+");
+                        if (tokens[0].equals(peerId)) {
+                            newLine = tokens[0] + " " + tokens[1] + " " + tokens[2] + " " + hasFile;
+                        }
+                        return newLine;
                     }
-                    return newLine;
+            ).collect(Collectors.toList());
+        }
+        synchronized (peerInfoConfigFile) {
+            try (FileOutputStream fos = new FileOutputStream(peerInfoConfigFile, false)) {
+                FileLock lock = fos.getChannel().lock();
+                PrintWriter pw = new PrintWriter(fos);
+                for(String line: newLines) {
+                    pw.println(line);
                 }
-        ).collect(Collectors.toList());
-        Files.write(path, newLines);
-        lines.close();
+                pw.close();
+                lock.release();
+            }
+        }
     }
 }
