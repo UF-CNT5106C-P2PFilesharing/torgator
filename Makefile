@@ -14,10 +14,10 @@ SystemConfiguration.class: Configurations/SystemConfiguration.java
 MessageHandler.class: Handlers/MessageHandler.java
 	$(JCC) $(JFLAGS) Handlers/MessageHandler.java
 
-FileServerHandler: Handlers/FileServerHandler.java
+FileServerHandler.class: Handlers/FileServerHandler.java
 	$(JCC) $(JFLAGS) Handlers/FileServerHandler.java
 
-MessageProcessingHandler: Handlers/MessageProcessingHandler.java
+MessageProcessingHandler.class: Handlers/MessageProcessingHandler.java
 	$(JCC) $(JFLAGS) Handlers/MessageProcessingHandler.java
 
 Helper.class: Logging/Helper.java
@@ -59,7 +59,8 @@ PreferredNeighbors.class: Tasks/PreferredNeighbors.java
 peerProcess: Process/peerProcess.class
 	$(JAVA) Process/peerProcess 1001
 
-StartRemotePeers.class: Process/StartRemotePeers.java
+StartRemotePeers.class: Process/StartRemotePeers.java Process/peerProcess.java
+	$(JCC) $(JFLAGS) Process/peerProcess.java
 	$(JCC) $(JFLAGS) $(REMOTE_PEER_OPTS) Process/StartRemotePeers.java
 
 StartRemotePeers: Process/StartRemotePeers.class

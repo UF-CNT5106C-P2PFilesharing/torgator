@@ -6,7 +6,6 @@ import Handlers.MessageHandler;
 import Handlers.MessageProcessingHandler;
 import Logging.Helper;
 import Messages.BitField;
-import Messages.Constants;
 import Metadata.PeerMetadata;
 import Tasks.OptimisticallyUnChokedNeighbors;
 import Tasks.PreferredNeighbors;
@@ -15,7 +14,6 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
-import java.nio.channels.FileLock;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
@@ -122,12 +120,12 @@ public class peerProcess {
      * This method is used to start file server and file receiver threads
      */
     public static void startFileExchangeThreads() throws IOException {
+        startFileServingThread();
         if (!isFirstPeer) {
             //if file not present create a new one and start serving and listening.
             createNewFile();
             startFileReceivingThreads();
         }
-        startFileServingThread();
     }
 
     /**
@@ -219,43 +217,18 @@ public class peerProcess {
      * This method is used to check if all the peers have downloaded the file
      * @return boolean
      */
-//    public static synchronized boolean isDownloadComplete() {
-//        boolean isDownloadComplete = true;
-//        try {
-//            List<String> lines = Files.readAllLines(Paths.get(peerInfoFile));
-//            if (lines.size() == 0) return false;
-//            for (String line : lines) {
-//                String[] properties = line.split("\\s+");
-//                if (Integer.parseInt(properties[3]) == 0) return false;
-//            }
-//        } catch (IOException e) {
-//            isDownloadComplete = false;
-//        }
-//
-//        return isDownloadComplete;
-//    }
-
-    /**
-     * This method is used to check if all the peers have downloaded the file
-     * @return boolean
-     */
     public static synchronized boolean isDownloadComplete() {
-        synchronized (peerInfoConfigFile) {
-            try (FileInputStream fis = new FileInputStream(peerInfoFile)) {
-                FileLock lock = fis.getChannel().lock();
-                try(BufferedReader br = new BufferedReader(new InputStreamReader(fis, Constants.DEFAULT_CHARSET))) {
-                    String line;
-                    while ((line = br.readLine()) != null) {
-                        String[] properties = line.split("\\s+");
-                        if (Integer.parseInt(properties[3]) == 0) return false;
-                    }
-                }
-                lock.release();
-            } catch (IOException e) {
-                return false;
+        try {
+            List<String> lines = Files.readAllLines(Paths.get(peerInfoFile));
+            if (lines.size() == 0) return false;
+            for (String line : lines) {
+                String[] properties = line.split("\\s+");
+                if (Integer.parseInt(properties[3]) == 0) return false;
             }
+            return true;
+        } catch (IOException e) {
+            return false;
         }
-        return true;
     }
 
     public static void initializeSystemConfiguration() throws IOException {
@@ -301,7 +274,7 @@ public class peerProcess {
         }
     }
 
-    public static void updateOtherPeerMetaData() {
+    public synchronized static void updateOtherPeerMetaData() {
         try {
             List<String> lines = Files.readAllLines(Paths.get(peerInfoFile));
             for (String line : lines) {

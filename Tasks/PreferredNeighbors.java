@@ -35,22 +35,11 @@ public class PreferredNeighbors extends TimerTask {
         if(!peerProcess.preferredNeighbours.isEmpty() && numInterestedPeers > SystemConfiguration.numberOfPreferredNeighbours) peerProcess.preferredNeighbours.clear();
         ArrayList<PeerMetadata> preferredPeers = new ArrayList<>(peerProcess.remotePeerDetails.values());
         int isCompleteFilePresent = peerProcess.remotePeerDetails.get(peerProcess.peerID).getHasCompleteFile();
-        if (isCompleteFilePresent == 1) {
+        if ((isCompleteFilePresent == 1)) {
             Collections.shuffle(preferredPeers);
         } else {
-            preferredPeers.sort((p1, p2) -> {
-                if (p1 == null && p2 == null)
-                    return 0;
-
-                if (p1 == null)
-                    return 1;
-
-                if (p2 == null)
-                    return -1;
-
-                return p1 instanceof Comparable ? p2.compareTo(p1) : p2.toString().compareTo(p1.toString());
-                });
-            }
+            preferredPeers.sort((p1, p2) -> p2.compareTo(p1));
+        }
         for (int i = 0; i < numNeighborsToUpdate; i++) {
             PeerMetadata preferredPeer = preferredPeers.get(i);
             // If the preferred peer is interested and does not have the complete file yet then

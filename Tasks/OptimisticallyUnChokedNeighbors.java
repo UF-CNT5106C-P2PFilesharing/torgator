@@ -85,7 +85,7 @@ public class OptimisticallyUnChokedNeighbors extends TimerTask {
     private void sendHaveMessage(Socket socket, String peerID) {
         logMessage(peerProcess.peerID + " sending HAVE message to peerProcess " + peerID);
         byte[] bitFieldInBytes = peerProcess.bitFieldMessage.getFilePieceBytesEncoded();
-        Msg message = null;
+        Msg message;
         try {
             message = new Msg(Constants.HAVE, bitFieldInBytes);
             SendMessageToSocket(socket, Msg.serializeMessage(message));

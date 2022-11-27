@@ -8,7 +8,7 @@ package Process;
  * It is your responsibility to adapt this program to your running environment.
  */
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
@@ -33,6 +33,7 @@ public class StartRemotePeers {
 
     public Vector<PeerMetadata> peerInfoVector;
     public static String path = System.getProperty("user.dir");
+    public static String username = "anmol.patil";
 
     public void getConfiguration()
     {
@@ -56,39 +57,32 @@ public class StartRemotePeers {
             Session session;
             ChannelExec channel;
 
-//            Scanner scanner = new Scanner(System.in);
-//            System.out.println("Enter the username :");
-//            String username = scanner.next();
-//            System.out.println("Enter the password :");
-//            String password = scanner.next();
+            Scanner scanner = new Scanner(System.in);
+            System.out.print("Enter username: ");
+            String username = scanner.next();
+
+            System.out.println();
+            System.out.print("Enter password: ");
+            String password = scanner.next();
 
             // start clients at remote hosts
             System.out.println(path);
             for (int i = 0; i < myStart.peerInfoVector.size(); i++) {
                 PeerMetadata pInfo = myStart.peerInfoVector.elementAt(i);
+                session = new JSch().getSession(username,  pInfo.getHostAddress() , 22);
+                session.setPassword(password);
+                session.setConfig("StrictHostKeyChecking", "no");
+                session.connect();
 
-                System.out.println("Start remote peer " + pInfo.getId() +  " at " + pInfo.getHostAddress());
-//                session = new JSch().getSession(username, pInfo.getHostAddress(), 22);
-//                session.setPassword(password);
-//                session.setConfig("StrictHostKeyChecking", "no");
-//                session.connect();
-
-//                channel = (ChannelExec) session.openChannel("exec");
-                String buildCommand = "cd " + path + "; make peerProcess.class";
-                String startSeederLeecher = "cd " + path + "; java peerProcess " + pInfo.getId();
-                if( i == 0) {
-//                    channel.setCommand(buildCommand);
-//                    ByteArrayOutputStream responseStream = new ByteArrayOutputStream();
-//                    channel.setOutputStream(responseStream);
-//                    channel.connect();
-                    Runtime.getRuntime().exec(buildCommand);
-                    TimeUnit.SECONDS.sleep(3);
-                }
-//                channel.setCommand(startSeederLeecher);
-//                ByteArrayOutputStream responseStream = new ByteArrayOutputStream();
-//                channel.setOutputStream(responseStream);
-//                channel.connect();
-                Runtime.getRuntime().exec(startSeederLeecher);
+                channel = (ChannelExec) session.openChannel("exec");
+                channel.setCommand("cd " + path + "; java Process/peerProcess " + pInfo.getId());
+                ByteArrayOutputStream responseStream = new ByteArrayOutputStream();
+                channel.setOutputStream(responseStream);
+                channel.connect();
+//                System.out.println("Start remote peer " + pInfo.getId() +  " at " + pInfo.getHostAddress());
+//                String startSeederLeecher = "cd " + path + "; java Process/peerProcess " + pInfo.getId();
+//                Runtime.getRuntime().exec("ssh " + username + "@" + pInfo.getHostAddress() + startSeederLeecher);
+//                Runtime.getRuntime().exec("java Process/peerProcess " + pInfo.getId());
                 TimeUnit.SECONDS.sleep(3);
             }
             System.out.println("Starting all remote peers has done." );

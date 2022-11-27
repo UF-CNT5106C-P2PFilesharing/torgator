@@ -270,15 +270,15 @@ public class MessageProcessingHandler implements Runnable {
     }
 
     private void processPeerDownloadCompleteState(String remotePeerID) {
-        try {
+//        try {
             //update neighbor details after it gets file completely
-            peerProcess.remotePeerDetails.get(peerProcess.peerID).updatePeerMetadata(remotePeerID, 1);
+//            peerProcess.remotePeerDetails.get(peerProcess.peerID).updatePeerMetadata(remotePeerID, 1);
             logMessage(remotePeerID + " has downloaded the complete file");
             int previousState = peerProcess.remotePeerDetails.get(remotePeerID).getPreviousPeerState();
             peerProcess.remotePeerDetails.get(remotePeerID).setPeerState(previousState);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
     }
 
     /**
