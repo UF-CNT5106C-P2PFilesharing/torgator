@@ -18,6 +18,6 @@ public class LogFormatter extends Formatter {
     }
 
     public static String getFormattedMessage(String message) {
-        return dateTimeFormatter.format(LocalDateTime.now()) + ": " + "Peer " + message + "\n";
+        return dateTimeFormatter.format(LocalDateTime.now()) + ": " + "peerProcess " + message + "\n";
     }
 }

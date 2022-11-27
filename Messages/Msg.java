@@ -18,9 +18,10 @@ public class Msg {
     public Msg(String messageType) {
         try {
             if (messageType.equals(Constants.INTERESTED) || messageType.equals(Constants.NOT_INTERESTED) || messageType.equals(Constants.CHOKE) || messageType.equals(Constants.UNCHOKE) || messageType.equals(Constants.MESSAGE_DOWNLOADED)) {
-                this.dataLength = Constants.MESSAGE_TYPE;
-                this.typeInBytes = messageType.trim().getBytes(Constants.DEFAULT_CHARSET);
-                this.payload = null;
+               setMessageLength(Constants.MESSAGE_TYPE);
+               this.type = messageType.trim();
+               this.typeInBytes = messageType.trim().getBytes(Constants.DEFAULT_CHARSET);
+               this.payload = null;
             } else {
                 throw new Exception("Invalid message type.");
             }
@@ -31,16 +32,16 @@ public class Msg {
 
     public Msg(String messageType, byte[] payload) throws UnsupportedEncodingException {
         if (payload != null) {
-            this.dataLength = payload.length + 1;
-            this.payload = payload;
+            setMessageLength(payload.length + 1);
+            setPayload(payload);
         }
         else {
             if (messageType.equals(Constants.INTERESTED) || messageType.equals(Constants.NOT_INTERESTED) || messageType.equals(Constants.CHOKE) || messageType.equals(Constants.UNCHOKE) || messageType.equals(Constants.MESSAGE_DOWNLOADED)) {
-                this.dataLength = Constants.MESSAGE_TYPE;
-                this.payload = null;
+                setMessageLength(Constants.MESSAGE_TYPE);
+                setPayload(null);
             }
         }
-        this.type = messageType;
+        this.type = messageType.trim();
         this.typeInBytes = messageType.trim().getBytes(Constants.DEFAULT_CHARSET);
     }
 
@@ -60,10 +61,10 @@ public class Msg {
         return this.typeInBytes;
     }
 
-    public void setMessageLength(int length) throws UnsupportedEncodingException {
+    public void setMessageLength(int length){
         this.dataLength = length;
         this.lengthInString = ((Integer) length).toString();
-        this.lengthInBytes = this.lengthInString.getBytes(Constants.DEFAULT_CHARSET);
+        this.lengthInBytes = ByteBuffer.allocate(4).putInt(length).array();
     }
 
     public void setMessageLength(byte[] length) throws UnsupportedEncodingException {
@@ -83,21 +84,24 @@ public class Msg {
     }
 
     public static byte[] serializeMessage(Msg message) throws Exception {
-        byte[] serializedMessage = null;
-            int messageType = Integer.parseInt(message.getType());
-            if (0 < messageType && messageType <= 8) {
-                if (message.getPayload() != null) {
-                    serializedMessage = new byte[Constants.MESSAGE_LENGTH + Constants.MESSAGE_TYPE + message.getPayload().length];
-                    System.arraycopy(message.getLengthAsBytes(), 0, serializedMessage, 0, message.getLengthAsBytes().length);
-                    System.arraycopy(message.getTypeAsBytes(), 0, serializedMessage, Constants.MESSAGE_LENGTH, Constants.MESSAGE_TYPE);
-                    System.arraycopy(message.getPayload(), 0, serializedMessage, Constants.MESSAGE_LENGTH + Constants.MESSAGE_TYPE, message.getPayload().length);
-                } else {
-                    serializedMessage = new byte[Constants.MESSAGE_LENGTH + Constants.MESSAGE_TYPE];
-                    System.arraycopy(message.getLengthAsBytes(), 0, serializedMessage, 0, message.getLengthAsBytes().length);
-                    System.arraycopy(message.getTypeAsBytes(), 0, serializedMessage, Constants.MESSAGE_LENGTH, Constants.MESSAGE_TYPE);
-                }
+        byte[] serializedMessage;
+        int messageType = Integer.parseInt(message.getType());
+        if (0 < messageType && messageType <= 8) {
+            if (message.getPayload() != null) {
+                serializedMessage = new byte[Constants.MESSAGE_LENGTH + Constants.MESSAGE_TYPE + message.getPayload().length];
+                System.arraycopy(message.getLengthAsBytes(), 0, serializedMessage, 0, message.getLengthAsBytes().length);
+                System.arraycopy(message.getTypeAsBytes(), 0, serializedMessage, Constants.MESSAGE_LENGTH, Constants.MESSAGE_TYPE);
+                System.arraycopy(message.getPayload(), 0, serializedMessage, Constants.MESSAGE_LENGTH + Constants.MESSAGE_TYPE, message.getPayload().length);
+            } else {
+                serializedMessage = new byte[Constants.MESSAGE_LENGTH + Constants.MESSAGE_TYPE];
+                System.arraycopy(message.getLengthAsBytes(), 0, serializedMessage, 0, message.getLengthAsBytes().length);
+                System.arraycopy(message.getTypeAsBytes(), 0, serializedMessage, Constants.MESSAGE_LENGTH, Constants.MESSAGE_TYPE);
             }
-            else throw new Exception("Invalid message Type");
+        }
+        else {
+            System.out.println("Message Type: " + messageType);
+            throw new Exception("Invalid message Type");
+        }
         return serializedMessage;
     }
 

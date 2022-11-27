@@ -13,6 +13,10 @@ public class MessageQueue {
     }
 
     public static synchronized MessageMetadata getMessageFromQueue() {
-        return  !messageQueue.isEmpty() ? messageQueue.remove() : null;
+        return messageQueue.remove();
+    }
+
+    public static synchronized boolean hasNext() {
+        return !messageQueue.isEmpty();
     }
 }
