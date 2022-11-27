@@ -33,7 +33,6 @@ public class StartRemotePeers {
 
     public Vector<PeerMetadata> peerInfoVector;
     public static String path = System.getProperty("user.dir");
-    public static String username = "anmol.patil";
 
     public void getConfiguration()
     {
