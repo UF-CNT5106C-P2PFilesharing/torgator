@@ -108,7 +108,7 @@ public class BitField {
                 filePieces[pieceIndex].setIsPieceAvailable(1);
                 randomAccessFile.close();
                 Helper.logMessage(peerProcess.peerID + " received the PIECE " + pieceIndex
-                        + " from peerProcess " + peerID + ". Current piece count: "
+                        + " from Peer " + peerID + ". Current piece count: "
                         + peerProcess.bitFieldMessage.getNumberOfAvailablePieces());
 
                 if (peerProcess.bitFieldMessage.isFileDownloadComplete()) {
@@ -149,17 +149,7 @@ public class BitField {
         return filePieces;
     }
 
-    public void setFilePieces(FilePiece[] filePieces) {
-        this.filePieces = filePieces;
-    }
-
     public int getNumPieces() {
         return numPieces;
     }
-
-    public void setNumPieces(int numPieces) {
-        this.numPieces = numPieces;
-    }
-
-
 }

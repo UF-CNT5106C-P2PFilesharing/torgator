@@ -72,19 +72,16 @@ public class StartRemotePeers {
                 session.setPassword(password);
                 session.setConfig("StrictHostKeyChecking", "no");
                 session.connect();
-
+                System.out.println("Starting remote peer " + pInfo.getId() +  " at " + pInfo.getHostAddress());
                 channel = (ChannelExec) session.openChannel("exec");
                 channel.setCommand("cd " + path + "; java Process/peerProcess " + pInfo.getId());
                 ByteArrayOutputStream responseStream = new ByteArrayOutputStream();
                 channel.setOutputStream(responseStream);
                 channel.connect();
-//                System.out.println("Start remote peer " + pInfo.getId() +  " at " + pInfo.getHostAddress());
-//                String startSeederLeecher = "cd " + path + "; java Process/peerProcess " + pInfo.getId();
-//                Runtime.getRuntime().exec("ssh " + username + "@" + pInfo.getHostAddress() + startSeederLeecher);
-//                Runtime.getRuntime().exec("java Process/peerProcess " + pInfo.getId());
                 TimeUnit.SECONDS.sleep(3);
             }
             System.out.println("Starting all remote peers has done." );
+            System.exit(0);
 
         }
         catch (Exception ex) {

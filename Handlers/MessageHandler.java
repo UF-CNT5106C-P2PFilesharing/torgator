@@ -75,8 +75,8 @@ public class MessageHandler implements Runnable {
                 handShakeMsg = HandShakeMsg.deserializeHandShakeMsg(messageBytes);
                 if (handShakeMsg.getHeader().equals(Constants.HANDSHAKE_HEADER)) {
                     remotePeerId = handShakeMsg.getPeerID();
-                    Helper.logMessage(id + " is connected from peerProcess " + remotePeerId);
-                    Helper.logMessage(id + " Received a HANDSHAKE message from peerProcess " + remotePeerId);
+                    Helper.logMessage(id + " is connected from Peer " + remotePeerId);
+                    Helper.logMessage(id + " Received a HANDSHAKE message from Peer " + remotePeerId);
 
                     // populate peerID to socket mapping
                     peerProcess.peerToSocketMap.put(remotePeerId, this.socket);
