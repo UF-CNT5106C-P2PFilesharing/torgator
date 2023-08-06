@@ -29,8 +29,9 @@ Extract the zip file **torgator.zip**
 22. Makefile - to compile and run the project.
 
 ## How to compile
-Run make command to compile the code
+Please log in to any of the UFL linux machines to start with.
 
+Run make command to compile the code
 Steps:
 1. make clean
 2. make StartRemotePeers.class
